@@ -1,4 +1,4 @@
-package org.allen.ins.underwriting.domain;
+package org.allen.ins.underwriting.pojo.domain;
 
 import lombok.Data;
 

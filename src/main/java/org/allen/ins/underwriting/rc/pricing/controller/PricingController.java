@@ -1,0 +1,34 @@
+package org.allen.ins.underwriting.rc.pricing.controller;
+
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
+import org.allen.ins.underwriting.common.result.Result;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 保费定价细分Controller
+ * 核保系统单独调用保费计算时使用
+ */
+@RestController
+@RequestMapping("/rc/pricing")
+public class PricingController {
+
+    @Resource
+    private PricingService pricingService;
+
+    /**
+     * 单独计算保费（基于风控决策结果）
+     */
+    @PostMapping("/calculate")
+    public Result<PricingVO> calculatePremium(@Valid @RequestBody PricingRequestDTO request) {
+        try {
+            PricingVO vo = pricingService.calculate(request);
+            return Result.success(vo);
+        } catch (Exception e) {
+            return Result.fail("保费定价计算失败：" + e.getMessage());
+        }
+    }
+}
