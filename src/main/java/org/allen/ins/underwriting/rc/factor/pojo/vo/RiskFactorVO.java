@@ -22,7 +22,7 @@ public class RiskFactorVO {
     /**
      * 风险等级（前端展示用：低/中/高/极高）
      */
-    private String riskLevel;
+    private String totalRiskLevel;
 
     /**
      * 计算时间

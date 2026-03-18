@@ -77,7 +77,7 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
 
         RiskFactorVO riskFactorVO = BeanUtil.copyProperties(riskFactorRecord, RiskFactorVO.class);
         // TODO 风险值 映射为 等级
-        riskFactorVO.setRiskLevel("中等");
+        riskFactorVO.setTotalRiskLevel("中等");
         return riskFactorVO;
     }
 }
