@@ -6,6 +6,7 @@ import org.allen.ins.underwriting.common.exception.BusinessException;
 import org.allen.ins.underwriting.common.result.Result;
 import org.allen.ins.underwriting.pojo.dto.PolicyHolderDTO;
 import org.allen.ins.underwriting.pojo.vo.PolicyHolderVO;
+import org.allen.ins.underwriting.service.PolicyHolderService;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -35,9 +36,8 @@ public class PolicyHolderController {
     public Result<PolicyHolderVO> getPolicyHolderById(@PathVariable Long id) {
         PolicyHolderVO vo = policyHolderService.getPolicyHolderVOById(id);
         if (vo == null) {
-            throw new BusinessException("投保人ID不存在");
+            throw new BusinessException(404, "投保人ID不存在");
         }
         return Result.success(vo);
-        }
     }
 }

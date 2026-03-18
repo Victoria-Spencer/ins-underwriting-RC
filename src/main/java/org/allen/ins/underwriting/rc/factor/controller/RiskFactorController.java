@@ -3,6 +3,7 @@ package org.allen.ins.underwriting.rc.factor.controller;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.allen.ins.underwriting.common.result.Result;
+import org.allen.ins.underwriting.rc.factor.service.RiskFactorService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

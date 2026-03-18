@@ -2,3 +2,22 @@ spring:
   application:
     name:
       ins-underwriting-RC
+  # 数据库连接配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/ins_underwriting_rc?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# MyBatis-Plus配置
+mybatis-plus:
+  # 映射器（Mapper）接口扫描路径
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: org.allen.ins.underwriting.pojo.domain # 实体类包路径
+  configuration:
+    map-underscore-to-camel-case: true # 自动下划线转驼峰（比如数据库t_policy_holder → 实体PolicyHolder）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 打印SQL日志（开发环境用，生产关闭）
+  global-config:
+    db-config:
+      id-type: AUTO # 主键策略：AUTO（自增），如果用雪花算法改ASSIGN_ID
+      table-prefix: t_ # 表名前缀（比如实体PolicyHolder → 表t_policy_holder）

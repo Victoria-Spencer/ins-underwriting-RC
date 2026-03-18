@@ -60,4 +60,22 @@ public class RiskDecisionRecord implements Serializable {
      * 创建时间
      */
     private LocalDateTime createTime;
+
+//    /**
+//     * 新增：核保申请单号（外键关联t_underwriting_apply.id）
+//     * 唯一标识一次核保申请，同一投保人多次申请会有不同的applyId
+//     */
+//    private Long underwritingApplyId;
+//
+//    /**
+//     * 新增：核保批次/版本号（可选，便于业务识别）
+//     * 比如“20240520-01”表示2024-05-20该投保人的第1次核保
+//     */
+//    private String underwritingBatchNo;
+//
+//    /**
+//     * 新增：记录状态（可选，如INIT/COMPLETE/FAIL）
+//     * 标记本次风险计算是否完成，便于筛选有效记录
+//     */
+//    private String recordStatus;
 }

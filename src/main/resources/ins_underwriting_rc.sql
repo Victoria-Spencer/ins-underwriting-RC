@@ -1,8 +1,8 @@
-CREATE DATABASE ins_underwriting_rc;
+CREATE DATABASE IF NOT EXISTS ins_underwriting_rc;
 
 USE ins_underwriting_rc;
 
---- 投保人表
+-- 投保人表
 CREATE TABLE  IF NOT EXISTS `t_policy_holder` (
                                    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
                                    `name` varchar(32) NOT NULL COMMENT '投保人姓名',
