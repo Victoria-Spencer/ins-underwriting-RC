@@ -54,10 +54,13 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
         BigDecimal ageRiskValue = ageRiskDictMapper.getRiskValueByAge(policyHolder.getAge());
         BigDecimal occupationRiskValue = occupationRiskDictMapper.getRiskValueByOccupationName(policyHolder.getOccupation());
         BigDecimal amountRiskValue = sumInsuredRiskDictMapper.getRiskValueByAmount(request.getInsureAmount());
+        if (null == ageRiskValue ||  null == occupationRiskValue || null == amountRiskValue) {
+            throw new BusinessException("年龄/职业/保额风险因子不能为空");
+        }
 
         // TODO 调用第三方接口核验住院记录
 
-        // TODO 计算健康风险因子
+        // TODO 调用第三方接口获取健康因子的核心数据，然后计算健康风险因子
         BigDecimal healthRiskValue  = BigDecimal.valueOf(0.10);
 
         // 加权计算总风险因子

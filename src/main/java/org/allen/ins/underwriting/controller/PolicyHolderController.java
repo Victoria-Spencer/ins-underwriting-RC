@@ -35,7 +35,7 @@ public class PolicyHolderController {
     @GetMapping("/get/{id}")
     public Result<PolicyHolderVO> getPolicyHolderById(@PathVariable Long id) {
         PolicyHolderVO vo = policyHolderService.getPolicyHolderVOById(id);
-        if (vo == null) {
+        if (null == vo) {
             throw new BusinessException(404, "投保人ID不存在");
         }
         return Result.success(vo);

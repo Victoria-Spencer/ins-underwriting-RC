@@ -38,7 +38,7 @@ public enum RiskLevelEnum {
      */
     public static RiskLevelEnum getByTotalValue(BigDecimal totalRiskValue) {
         // 空值兜底：默认低风险（或抛异常，根据业务定）
-        if (totalRiskValue == null) {
+        if (null == totalRiskValue) {
             return LOW;
         }
         // 遍历匹配阈值
