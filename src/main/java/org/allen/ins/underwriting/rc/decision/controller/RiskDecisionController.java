@@ -25,11 +25,7 @@ public class RiskDecisionController {
      */
     @PostMapping("/calculate")
     public Result<RiskDecisionVO> calculateDecision(@Valid @RequestBody RiskDecisionRequestDTO request) {
-        try {
-            RiskDecisionVO vo = riskDecisionService.calculate(request);
-            return Result.success(vo);
-        } catch (Exception e) {
-            return Result.fail("风控决策计算失败：" + e.getMessage());
-        }
+        RiskDecisionVO vo = riskDecisionService.calculate(request);
+        return Result.success(vo);
     }
 }

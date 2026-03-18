@@ -25,11 +25,7 @@ public class RiskFactorController {
      */
     @PostMapping("/calculate")
     public Result<RiskFactorVO> calculateRiskFactor(@Valid @RequestBody RiskFactorRequestDTO request) {
-        try {
-            RiskFactorVO vo = riskFactorService.calculate(request);
-            return Result.success(vo);
-        } catch (Exception e) {
-            return Result.fail("风险因子计算失败：" + e.getMessage());
-        }
+        RiskFactorVO vo = riskFactorService.calculate(request);
+        return Result.success(vo);
     }
 }

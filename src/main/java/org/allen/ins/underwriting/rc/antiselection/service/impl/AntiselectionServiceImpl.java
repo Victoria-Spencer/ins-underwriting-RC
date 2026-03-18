@@ -9,4 +9,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class AntiselectionServiceImpl extends ServiceImpl<AntiselectionMapper, AntiselectionRecord>
         implements AntiselectionService {
+    @Override
+    public AntiselectionVO check(AntiselectionRequestDTO request) {
+        return null;
+    }
 }

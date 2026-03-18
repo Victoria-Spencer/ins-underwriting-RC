@@ -25,11 +25,7 @@ public class PricingController {
      */
     @PostMapping("/calculate")
     public Result<PricingVO> calculatePremium(@Valid @RequestBody PricingRequestDTO request) {
-        try {
-            PricingVO vo = pricingService.calculate(request);
-            return Result.success(vo);
-        } catch (Exception e) {
-            return Result.fail("保费定价计算失败：" + e.getMessage());
-        }
+        PricingVO vo = pricingService.calculate(request);
+        return Result.success(vo);
     }
 }

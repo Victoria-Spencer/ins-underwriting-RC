@@ -9,4 +9,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,RiskDecisionRecord>
         implements RiskDecisionService {
+    @Override
+    public RiskDecisionVO calculate(RiskDecisionRequestDTO request) {
+        return null;
+    }
 }

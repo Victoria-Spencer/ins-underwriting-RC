@@ -25,11 +25,7 @@ public class AntiselectionController {
      */
     @PostMapping("/check")
     public Result<AntiselectionVO> checkAntiselection(@Valid @RequestBody AntiselectionRequestDTO request) {
-        try {
-            AntiselectionVO vo = antiselectionService.check(request);
-            return Result.success(vo);
-        } catch (Exception e) {
-            return Result.fail("逆选择风险校验失败：" + e.getMessage());
-        }
+        AntiselectionVO vo = antiselectionService.check(request);
+        return Result.success(vo);
     }
 }
