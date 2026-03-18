@@ -5,6 +5,13 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 职业风险字典实体类
+ * 对应表：t_occupation_risk_dict
+ *
+ * @author allen
+ * @date 2026-03-18
+ */
 @Data
 @TableName("t_occupation_risk_dict")
 public class OccupationRiskDict {

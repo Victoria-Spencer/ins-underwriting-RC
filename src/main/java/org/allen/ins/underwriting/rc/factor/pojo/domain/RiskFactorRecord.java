@@ -1,6 +1,9 @@
 package org.allen.ins.underwriting.rc.factor.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,6 +15,7 @@ import java.math.BigDecimal;
  * 记录风险因子计算过程和结果
  */
 @Data
+@Accessors(chain = true)
 public class RiskFactorRecord implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -54,6 +58,7 @@ public class RiskFactorRecord implements Serializable {
     /**
      * 计算时间
      */
+    @TableField(value = "calculate_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime calculateTime;
 
     /**

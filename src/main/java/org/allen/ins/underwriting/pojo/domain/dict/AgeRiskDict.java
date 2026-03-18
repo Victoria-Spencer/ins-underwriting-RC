@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * 年龄风险字典实体类
  * 对应表：t_age_risk_dict
  *
- * @author 你的名字
+ * @author allen
  * @date 2026-03-18
  */
 @Data

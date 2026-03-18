@@ -12,7 +12,7 @@ spring:
 # MyBatis-Plus配置
 mybatis-plus:
   # 映射器（Mapper）接口扫描路径
-  mapper-locations: classpath:mapper/**/*.xml
+  mapper-locations: classpath:dao/**/*.xml
   type-aliases-package: org.allen.ins.underwriting.pojo.domain # 实体类包路径
   configuration:
     map-underscore-to-camel-case: true # 自动下划线转驼峰（比如数据库t_policy_holder → 实体PolicyHolder）
