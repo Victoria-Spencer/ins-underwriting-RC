@@ -3,6 +3,8 @@ package org.allen.ins.underwriting.rc.factor.controller;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.allen.ins.underwriting.common.result.Result;
+import org.allen.ins.underwriting.rc.factor.pojo.dto.RiskFactorCalculateDTO;
+import org.allen.ins.underwriting.rc.factor.pojo.vo.RiskFactorVO;
 import org.allen.ins.underwriting.rc.factor.service.RiskFactorService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,7 +26,7 @@ public class RiskFactorController {
      * 单独计算风险因子（不触发完整风控流程）
      */
     @PostMapping("/calculate")
-    public Result<RiskFactorVO> calculateRiskFactor(@Valid @RequestBody RiskFactorRequestDTO request) {
+    public Result<RiskFactorVO> calculateRiskFactor(@Valid @RequestBody RiskFactorCalculateDTO request) {
         RiskFactorVO vo = riskFactorService.calculate(request);
         return Result.success(vo);
     }

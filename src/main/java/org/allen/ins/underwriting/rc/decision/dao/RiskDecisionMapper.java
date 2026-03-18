@@ -1,4 +1,4 @@
-package org.allen.ins.underwriting.rc.decision.pojo.dto;
+package org.allen.ins.underwriting.rc.decision.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.allen.ins.underwriting.rc.decision.pojo.domain.RiskDecisionRecord;

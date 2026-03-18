@@ -2,7 +2,9 @@ package org.allen.ins.underwriting.rc.decision.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.allen.ins.underwriting.rc.decision.pojo.domain.RiskDecisionRecord;
-import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskDecisionMapper;
+import org.allen.ins.underwriting.rc.decision.dao.RiskDecisionMapper;
+import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskDecisionDTO;
+import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionVO;
 import org.allen.ins.underwriting.rc.decision.service.RiskDecisionService;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +12,7 @@ import org.springframework.stereotype.Service;
 public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,RiskDecisionRecord>
         implements RiskDecisionService {
     @Override
-    public RiskDecisionVO calculate(RiskDecisionRequestDTO request) {
+    public RiskDecisionVO calculate(RiskDecisionDTO request) {
         return null;
     }
 }
