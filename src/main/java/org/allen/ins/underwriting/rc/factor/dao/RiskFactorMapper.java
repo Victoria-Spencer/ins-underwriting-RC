@@ -5,5 +5,5 @@ import org.allen.ins.underwriting.rc.factor.pojo.domain.RiskFactorRecord;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface RiskFactorMapper  extends BaseMapper<RiskFactorRecord> {
+public interface RiskFactorMapper extends BaseMapper<RiskFactorRecord> {
 }

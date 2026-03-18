@@ -23,15 +23,51 @@ CREATE TABLE  IF NOT EXISTS `t_policy_holder` (
 
 
 
--- 职业风险字典表
+-- 职业风险字典表（t_occupation_risk_dict）
 CREATE TABLE IF NOT EXISTS `t_occupation_risk_dict` (
-                                          `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-                                          `occupation_name` varchar(64) NOT NULL COMMENT '职业名称',
-                                          `risk_value` decimal(3,2) NOT NULL COMMENT '职业风险值（0-1）',
-                                          `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                          PRIMARY KEY (`id`),
-                                          UNIQUE KEY `uk_occupation_name` (`occupation_name`) COMMENT '职业名称唯一索引'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='职业风险字典表（量化职业风险）';
+                                `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                `occupation_code` varchar(32) NOT NULL COMMENT '职业编码（101/102/201…）',
+                                `occupation_name` varchar(64) NOT NULL COMMENT '职业名称（办公室职员/教师…）',
+                                `risk_value` decimal(3,2) NOT NULL COMMENT '职业风险值（0-1）',
+                                `risk_level` varchar(16) NOT NULL COMMENT '风险等级（低/较低/中/高/极高风险）',
+                                `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用（1=是，0=否）',
+                                `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间（自动刷新）',
+                                PRIMARY KEY (`id`),
+                                UNIQUE KEY `uk_occupation_code` (`occupation_code`) COMMENT '职业编码唯一索引'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='职业风险字典表';
+
+
+-- 年龄风险字典表（保留CHECK约束，去掉CHECK后的COMMENT）
+CREATE TABLE IF NOT EXISTS `t_age_risk_dict` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `age_min` tinyint(3) NOT NULL COMMENT '年龄下限（含）',
+    `age_max` tinyint(3) NOT NULL COMMENT '年龄上限（含）',
+    `risk_value` decimal(3,2) NOT NULL COMMENT '年龄风险值（0-1）',
+    `risk_level` varchar(16) NOT NULL COMMENT '风险等级（低/较低/中/高/极高风险）',
+    `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用（1=是，0=否）',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间（自动刷新）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_age_range` (`age_min`,`age_max`) COMMENT '年龄区间唯一索引（避免重复区间）',
+    CONSTRAINT `ck_age_range` CHECK (`age_min` <= `age_max`) -- 这里去掉了COMMENT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='年龄风险字典表（校验规则：年龄下限≤上限）'; -- 把校验规则写在表注释里
+
+-- 保额风险字典表（保留CHECK约束，去掉CHECK后的COMMENT）
+CREATE TABLE IF NOT EXISTS `t_sum_insured_risk_dict` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `sum_insured_min` decimal(16,2) NOT NULL COMMENT '保额下限（含，单位：元）',
+    `sum_insured_max` decimal(16,2) NOT NULL COMMENT '保额上限（含，单位：元）',
+    `risk_value` decimal(3,2) NOT NULL COMMENT '保额风险值（0-1）',
+    `risk_level` varchar(16) NOT NULL COMMENT '风险等级（低/较低/中/高/极高风险）',
+    `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用（1=是，0=否）',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间（自动刷新）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_sum_insured_range` (`sum_insured_min`,`sum_insured_max`) COMMENT '保额区间唯一索引',
+    CONSTRAINT `ck_sum_insured_range` CHECK (`sum_insured_min` <= `sum_insured_max`) -- 这里去掉了COMMENT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='保额风险字典表（校验规则：保额下限≤上限）'; -- 把校验规则写在表注释里
+
 
 
 -- 风险因子计算记录表

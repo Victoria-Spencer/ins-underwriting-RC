@@ -18,5 +18,6 @@ public class RiskFactorCalculateDTO {
      * 核保申请单号（必传，区分同一投保人的多次核保）
      */
     @NotNull(message = "核保申请单号不能为空")
+    // 暂未使用，预留用于区分同一投保人的多次核保请求
     private Long underwritingApplyId;
 }
