@@ -110,3 +110,35 @@ CREATE TABLE IF NOT EXISTS `t_underwriting_record` (
                                          KEY `idx_policy_holder_id` (`policy_holder_id`) COMMENT '投保人ID索引',
                                          KEY `idx_underwriting_time` (`underwriting_time`) COMMENT '承保时间索引'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='承保记录总表（最终归档）';
+
+
+
+-- 给保费定价记录表补充生效/失效时间
+ALTER TABLE `t_pricing_record`
+    ADD COLUMN `premium_start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '保费生效时间' AFTER `final_premium`,
+ADD COLUMN `premium_end_time` datetime NOT NULL COMMENT '保费失效时间' AFTER `premium_start_time`;
+
+
+
+/*-- 1. 新增险种规则表（存储不同险种的默认保障期间）
+CREATE TABLE IF NOT EXISTS `t_insurance_type_rule` (
+                                                       `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `insurance_type` varchar(32) NOT NULL COMMENT '投保险种类型（意外险/健康险/寿险）',
+    `default_period` int(11) NOT NULL COMMENT '默认保障期间（月）',
+    `period_unit` varchar(8) NOT NULL DEFAULT 'month' COMMENT '期间单位（month/year）',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_insurance_type` (`insurance_type`) COMMENT '险种类型唯一索引'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='险种规则表（存储保障期间等基础规则）';
+
+-- 2. 初始化险种规则（示例：意外险1年、健康险6个月、寿险5年）
+INSERT INTO `t_insurance_type_rule` (`insurance_type`, `default_period`)
+VALUES ('意外险', 12), ('健康险', 6), ('寿险', 60);
+
+-- 3. 给定价表补充生效时间，并关联险种规则推导失效时间
+ALTER TABLE `t_pricing_record`
+    ADD COLUMN `premium_start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '保费生效时间' AFTER `final_premium`,
+ADD COLUMN `insurance_type_rule_id` bigint(20) NOT NULL COMMENT '关联险种规则ID' AFTER `premium_start_time`;
+
+-- 4. 新增索引（优化关联查询）
+ALTER TABLE `t_pricing_record` ADD KEY `idx_insurance_type_rule_id` (`insurance_type_rule_id`);*/

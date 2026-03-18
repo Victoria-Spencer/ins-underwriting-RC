@@ -1,6 +1,9 @@
 package org.allen.ins.underwriting.pojo.vo;
 
 import lombok.Data;
+import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionVO;
+import org.allen.ins.underwriting.rc.factor.pojo.vo.RiskFactorVO;
+import org.allen.ins.underwriting.rc.pricing.pojo.vo.PricingVO;
 
 /**
  * 承保风控核心响应VO（返回给前端的完整结果）

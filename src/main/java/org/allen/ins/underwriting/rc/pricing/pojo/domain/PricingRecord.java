@@ -50,4 +50,14 @@ public class PricingRecord implements Serializable {
      * 定价时间
      */
     private LocalDateTime pricingTime;
+
+    /**
+     * 保费生效时间
+     */
+    private LocalDateTime premium_start_time;
+
+    /**
+     * 保费失效时间
+     */
+    private LocalDateTime premium_end_time;
 }
