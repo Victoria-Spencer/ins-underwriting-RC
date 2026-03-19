@@ -16,12 +16,6 @@ import java.math.BigDecimal;
 public class RiskDecisionPythonRequest {
     // TODO 硬编码改为通过反射读取数据库中的值
     /**
-     * 用户唯一标识（必传）
-     */
-    @NotBlank(message = "用户ID不能为空")
-    private Long userId;
-
-    /**
      * 业务线（如重疾险/医疗险，必传）
      */
     @NotBlank(message = "业务线不能为空")

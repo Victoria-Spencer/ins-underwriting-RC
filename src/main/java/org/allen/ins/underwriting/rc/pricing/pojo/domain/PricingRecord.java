@@ -27,6 +27,11 @@ public class PricingRecord implements Serializable {
     private Long policyHolderId;
 
     /**
+     * 全链路追踪ID
+     */
+    private String traceId;
+
+    /**
      * 关联风控决策记录ID
      */
     private Long riskDecisionId;

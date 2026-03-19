@@ -26,6 +26,11 @@ public class AntiselectionRecord implements Serializable {
     private Long policyHolderId;
 
     /**
+     * 全链路追踪ID
+     */
+    private String traceId;
+
+    /**
      * 关联风险因子记录ID
      */
     private Long riskFactorId;

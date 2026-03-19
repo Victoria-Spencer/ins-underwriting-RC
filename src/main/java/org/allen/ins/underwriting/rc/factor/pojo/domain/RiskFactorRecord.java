@@ -31,6 +31,11 @@ public class RiskFactorRecord implements Serializable {
     private Long policyHolderId;
 
     /**
+     * 全链路追踪ID
+     */
+    private String traceId;
+
+    /**
      * 年龄风险因子（0-1）
      */
     private BigDecimal ageRiskValue;

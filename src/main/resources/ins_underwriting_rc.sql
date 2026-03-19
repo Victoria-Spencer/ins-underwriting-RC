@@ -178,3 +178,30 @@ ADD COLUMN `insurance_type_rule_id` bigint(20) NOT NULL COMMENT '关联险种规
 
 -- 4. 新增索引（优化关联查询）
 ALTER TABLE `t_pricing_record` ADD KEY `idx_insurance_type_rule_id` (`insurance_type_rule_id`);*/
+
+
+
+-- 1. 风险因子计算记录表加 trace_id
+ALTER TABLE `t_risk_factor_record`
+    ADD COLUMN `trace_id` varchar(64) NOT NULL COMMENT '全链路追踪ID（单次核保请求唯一标识）' AFTER `policy_holder_id`,
+    ADD KEY `idx_trace_id` (`trace_id`) COMMENT 'trace_id索引（快速查询单次流程）';
+
+-- 2. 逆选择防控记录表加 trace_id
+ALTER TABLE `t_antiselection_record`
+    ADD COLUMN `trace_id` varchar(64) NOT NULL COMMENT '全链路追踪ID' AFTER `policy_holder_id`,
+    ADD KEY `idx_trace_id` (`trace_id`) COMMENT 'trace_id索引';
+
+-- 3. 风控决策记录表加 trace_id
+ALTER TABLE `t_risk_decision_record`
+    ADD COLUMN `trace_id` varchar(64) NOT NULL COMMENT '全链路追踪ID' AFTER `policy_holder_id`,
+    ADD KEY `idx_trace_id` (`trace_id`) COMMENT 'trace_id索引';
+
+-- 4. 保费定价记录表加 trace_id
+ALTER TABLE `t_pricing_record`
+    ADD COLUMN `trace_id` varchar(64) NOT NULL COMMENT '全链路追踪ID' AFTER `policy_holder_id`,
+    ADD KEY `idx_trace_id` (`trace_id`) COMMENT 'trace_id索引';
+
+-- 5. 承保记录表加 trace_id
+ALTER TABLE `t_underwriting_record`
+    ADD COLUMN `trace_id` varchar(64) NOT NULL COMMENT '全链路追踪ID' AFTER `policy_holder_id`,
+    ADD KEY `idx_trace_id` (`trace_id`) COMMENT 'trace_id索引';

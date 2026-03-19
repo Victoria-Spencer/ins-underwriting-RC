@@ -27,6 +27,11 @@ public class RiskDecisionRecord implements Serializable {
     private Long policyHolderId;
 
     /**
+     * 全链路追踪ID
+     */
+    private String traceId;
+
+    /**
      * 关联逆选择记录ID
      */
     private Long antiRecordId;
