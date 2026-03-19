@@ -31,9 +31,9 @@ INSERT INTO `t_occupation_risk_dict` (occupation_code, occupation_name, risk_val
 -- 年龄风险字典表初始化数据（贴合保险核保通用规则）
 INSERT INTO `t_age_risk_dict` (age_min, age_max, risk_value, risk_level, status) VALUES
 -- 少儿：0-17岁（低风险）
-(0, 17, 0.1, '低风险', 1),
+(0, 17, 0.2, '较低风险', 1),
 -- 青年：18-35岁（较低风险）
-(18, 35, 0.2, '较低风险', 1),
+(18, 35, 0.1, '低风险', 1),
 -- 中年：36-50岁（中风险）
 (36, 50, 0.4, '中风险', 1),
 -- 中老年：51-65岁（高风险）

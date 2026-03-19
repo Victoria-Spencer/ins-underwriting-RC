@@ -14,20 +14,25 @@ import java.math.BigDecimal;
  */
 @Data
 public class RiskDecisionPythonRequest {
-    // TODO 硬编码改为通过反射读取数据库中的值
+    // TODO 硬编码改为通过反射读取数据库的约束值
     /**
      * 业务线（如重疾险/医疗险，必传）
      */
-    @NotBlank(message = "业务线不能为空")
-    private String businessLine;
+    /*@NotBlank(message = "业务线不能为空")
+    private String businessLine;*/
+    /**
+     * 轨迹ID（唯一标识，供审计/回溯）
+     */
+    @NotNull(message = "轨迹ID不能为空")
+    private String traceId;
 
     /**
-     * 健康因子总分（0-100，必传）
+     * 风险因子总分（0-100，必传）
      */
-    @NotNull(message = "健康因子总分不能为空")
-    @Min(value = 0, message = "健康因子总分不能小于0")
-    @Max(value = 100, message = "健康因子总分不能大于100")
-    private Integer healthFactorTotal;
+    @NotNull(message = "风险因子总分不能为空")
+    @Min(value = 0, message = "风险因子总分不能小于0")
+    @Max(value = 100, message = "风险因子总分不能大于100")
+    private Integer totalRiskScore;
 
     /**
      * 职业风险等级（数值化：0=低，1=较低，2=中，3高，4极高，必传）

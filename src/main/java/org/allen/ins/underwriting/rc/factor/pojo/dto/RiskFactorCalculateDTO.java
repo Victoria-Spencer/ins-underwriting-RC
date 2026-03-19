@@ -17,7 +17,7 @@ public class RiskFactorCalculateDTO {
     private Long policyHolderId;
 
     /**
-     * 投保金额（影响保额风险因子）
+     * 投保金额（必传，影响保额风险因子）
      */
     @NotNull(message = "投保金额不能为空")
     private BigDecimal insureAmount;
