@@ -15,6 +15,7 @@ import org.allen.ins.underwriting.rc.decision.pojo.domain.RiskDecisionRecord;
 import org.allen.ins.underwriting.rc.decision.dao.RiskDecisionMapper;
 import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskDecisionDTO;
 import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskDecisionPythonRequest;
+import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskAIAnalysisResponse;
 import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionPythonResponse;
 import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionVO;
 import org.allen.ins.underwriting.rc.decision.service.RiskDecisionService;
@@ -58,17 +59,6 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
         private String decisionReason;      // 决策原因
         private Object aiReviewData;        // AI复查数据（可选）
         private BigDecimal agentProb;       // AI复查后的风险概率（可选）
-    }
-
-    /**
-     * 新增：AI复查响应类（补充缺失定义）
-     */
-    @Data
-    private static class RiskAIAnalysisResponse {
-        private String finalDecision;       // AI复查最终决策（承保/拒保）
-        private String reviewConclusion;    // AI复查结论
-        private BigDecimal agentRiskProb;   // AI复查风险概率
-        private Object aiReviewData;        // AI复查明细
     }
 
     @Override

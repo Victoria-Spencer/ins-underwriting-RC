@@ -30,3 +30,10 @@ python:
       # 超时配置
       connect-timeout: 5000
       read-timeout: 10000
+
+# AI复查接口配置
+ai:
+  review:
+    base-url: https://your-ai-api.com/v1/review # 实际AI接口地址
+    api-key: your-real-ai-api-key               # 实际API密钥
+    timeout: 30                                 # 超时时间（秒）
