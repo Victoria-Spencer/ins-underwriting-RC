@@ -42,9 +42,12 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
 
     @Override
     public RiskDecisionVO calculate(RiskDecisionDTO request) {
-        RiskDecisionPythonResponse riskDecisionPythonResponse = callPostRiskApi(request);
-
-        return null;
+        // 1. 调用Python接口
+        RiskDecisionPythonResponse pythonResp = callPostRiskApi(request);
+        // 2. 调用AI接口
+        RiskAIAnalysisResponse aiResp = callRiskAIAnalysisApi(request, pythonResp);
+        // 3. 加权融合+原因整合
+        return mergePythonAndAI(pythonResp, aiResp);
     }
 
     RiskDecisionPythonResponse callPostRiskApi(RiskDecisionDTO request) {

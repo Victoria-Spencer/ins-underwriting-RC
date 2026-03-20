@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import org.allen.ins.underwriting.common.constant.SystemConstant;
 import org.allen.ins.underwriting.common.exception.BusinessException;
+import org.allen.ins.underwriting.common.util.TraceIdContext;
 import org.allen.ins.underwriting.dao.PolicyHolderMapper;
 import org.allen.ins.underwriting.dao.dict.AgeRiskDictMapper;
 import org.allen.ins.underwriting.dao.dict.OccupationRiskDictMapper;
@@ -50,6 +51,7 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
     public RiskFactorVO calculate(RiskFactorCalculateDTO request) {
         Long policyHolderId = request.getPolicyHolderId();
         PolicyHolder policyHolder = policyHolderMapper.selectById(policyHolderId);
+        String traceId = TraceIdContext.getTraceId();
 
         BigDecimal ageRiskValue = ageRiskDictMapper.getRiskValueByAge(policyHolder.getAge());
         BigDecimal occupationRiskValue = occupationRiskDictMapper.getRiskValueByOccupationName(policyHolder.getOccupation());
@@ -78,6 +80,7 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
                 .setHealthRiskValue(healthRiskValue)
                 .setTotalRiskValue(totalRiskValue)
                 .setPolicyHolderId(policyHolderId)
+                .setTraceId(traceId)
                 .setCalculatorUser(SystemConstant.DEFAULT_CALCULATOR_USER)
                 .setCalculateTime(LocalDateTime.now());
 
