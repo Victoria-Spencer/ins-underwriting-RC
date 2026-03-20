@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
  * 字段和Python端RiskDecisionRequest严格对齐（camelCase自动转snake_case）
  */
 @Data
+@Accessors(chain = true)
 public class RiskDecisionPythonRequest {
     // TODO 硬编码改为通过反射读取数据库的约束值
     /**

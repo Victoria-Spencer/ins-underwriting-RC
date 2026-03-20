@@ -21,3 +21,12 @@ mybatis-plus:
     db-config:
       id-type: AUTO # 主键策略：AUTO（自增），如果用雪花算法改ASSIGN_ID
       table-prefix: t_ # 表名前缀（比如实体PolicyHolder → 表t_policy_holder）
+
+python:
+  risk:
+    api:
+      # 基础地址（主机+端口，无需路径）
+      base-url: http://127.0.0.1:8000
+      # 超时配置
+      connect-timeout: 5000
+      read-timeout: 10000
