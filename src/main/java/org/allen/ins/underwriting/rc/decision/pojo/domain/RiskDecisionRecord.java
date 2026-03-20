@@ -1,6 +1,9 @@
 package org.allen.ins.underwriting.rc.decision.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,6 +15,7 @@ import java.math.BigDecimal;
  * 记录最终风险决策过程，金融审计核心表
  */
 @Data
+@Accessors(chain = true)
 public class RiskDecisionRecord implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -37,17 +41,17 @@ public class RiskDecisionRecord implements Serializable {
     private Long antiRecordId;
 
     /**
-     * 数据模型风险概率（0-1，70%权重）
+     * 数据模型风险概率（0-1）
      */
     private BigDecimal dataModelProb;
 
     /**
-     * 智能体（豆包）风险概率（0-1，30%权重）
+     * 智能体（豆包）风险概率（0-1）
      */
     private BigDecimal agentProb;
 
     /**
-     * 最终风险概率（0-1，data_model_prob*0.7 + agent_prob*0.3）
+     * 最终风险概率（0-1，dataModelProb <= 0.3或 >= 0.7则选data_model_prob；否则agent_prob）
      */
     private BigDecimal finalRiskProb;
 
@@ -64,6 +68,7 @@ public class RiskDecisionRecord implements Serializable {
     /**
      * 创建时间
      */
+    @TableField(value = "createTime", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
 //    /**

@@ -1,11 +1,16 @@
 package org.allen.ins.underwriting.rc.decision.service.impl;
 
+import cn.hutool.core.lang.Assert;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.allen.ins.underwriting.common.util.TraceIdContext;
 import org.allen.ins.underwriting.dao.PolicyHolderMapper;
 import org.allen.ins.underwriting.dao.dict.OccupationRiskDictMapper;
 import org.allen.ins.underwriting.pojo.domain.PolicyHolder;
+import org.allen.ins.underwriting.rc.decision.constant.RiskDecisionConstant;
 import org.allen.ins.underwriting.rc.decision.pojo.domain.RiskDecisionRecord;
 import org.allen.ins.underwriting.rc.decision.dao.RiskDecisionMapper;
 import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskDecisionDTO;
@@ -14,6 +19,7 @@ import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionPythonResponse
 import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionVO;
 import org.allen.ins.underwriting.rc.decision.service.RiskDecisionService;
 import org.allen.ins.underwriting.rc.decision.util.PythonApiHttpClient;
+import org.allen.ins.underwriting.rc.factor.enums.DecisionResultEnum;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
@@ -38,29 +44,207 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
     private static final BigDecimal LEVEL_4_THRESHOLD = new BigDecimal("0.80");
     private static final BigDecimal MAX_RISK_VALUE = new BigDecimal("1.00");
     private static final BigDecimal MIN_RISK_VALUE = new BigDecimal("0.00");
+    // 百分比转换系数（0-1小数 → 0-100百分比）
+    private static final BigDecimal PERCENT_SCALE = new BigDecimal("100");
 
+    /**
+     * 决策结果封装类（替代零散的finalDecision/decisionReason变量）
+     */
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    private static class DecisionResult {
+        private String finalDecision;       // 最终决策（承保/拒保）
+        private String decisionReason;      // 决策原因
+        private Object aiReviewData;        // AI复查数据（可选）
+        private BigDecimal agentProb;       // AI复查后的风险概率（可选）
+    }
+
+    /**
+     * 新增：AI复查响应类（补充缺失定义）
+     */
+    @Data
+    private static class RiskAIAnalysisResponse {
+        private String finalDecision;       // AI复查最终决策（承保/拒保）
+        private String reviewConclusion;    // AI复查结论
+        private BigDecimal agentRiskProb;   // AI复查风险概率
+        private Object aiReviewData;        // AI复查明细
+    }
 
     @Override
     public RiskDecisionVO calculate(RiskDecisionDTO request) {
-        // 1. 调用Python接口
+        // ========== 1. 入参校验 & 基础数据获取 ==========
+        validateRequest(request);
         RiskDecisionPythonResponse pythonResp = callPostRiskApi(request);
-        // 2. 调用AI接口
-        RiskAIAnalysisResponse aiResp = callRiskAIAnalysisApi(request, pythonResp);
-        // 3. 加权融合+原因整合
-        return mergePythonAndAI(pythonResp, aiResp);
+
+        // 校验python返回的风险概率非空 + 范围合法（0-1）
+        BigDecimal pythonRiskProbability = validateAndGetPythonRiskProb(pythonResp);
+
+        RiskDecisionRecord decisionRecord = initDecisionRecord(request, pythonRiskProbability);
+
+        // ========== 2. 核心决策逻辑（主流程极简） ==========
+        DecisionResult decisionResult = makeCoreDecision(pythonRiskProbability, request, pythonResp);
+
+        // ========== 3. 决策记录赋值 & 保存（集中处理） ==========
+        fillAndSaveDecisionRecord(decisionRecord, decisionResult, pythonRiskProbability);
+
+        // ========== 4. 组装返回VO（单一出口） ==========
+        return buildDecisionVO(decisionResult);
     }
 
+    /**
+     * 新增：校验并获取Python返回的风险概率（非空+0-1范围）
+     */
+    private BigDecimal validateAndGetPythonRiskProb(RiskDecisionPythonResponse pythonResp) {
+        Assert.notNull(pythonResp, "Python风险评分接口返回为空");
+        BigDecimal riskProb = pythonResp.getPythonRiskProbability();
+        Assert.notNull(riskProb, "Python风险概率不能为空");
+        Assert.isTrue(riskProb.compareTo(MIN_RISK_VALUE) >= 0 && riskProb.compareTo(MAX_RISK_VALUE) <= 0,
+                "Python风险概率必须为0-1之间的数值");
+        return riskProb;
+    }
+
+    /**
+     * 组装返回VO（单一出口，逻辑清晰）
+     */
+    private RiskDecisionVO buildDecisionVO(DecisionResult decisionResult) {
+        RiskDecisionVO vo = new RiskDecisionVO();
+        vo.setDecisionResult(decisionResult.getFinalDecision());
+        vo.setDecisionReason(decisionResult.getDecisionReason());
+        vo.setAiReviewData(decisionResult.getAiReviewData());
+        // 仅承保场景标记定价
+        vo.setPricingFlag(DecisionResultEnum.DIRECT_ACCEPT.getChineseName().equals(decisionResult.getFinalDecision()));
+        return vo;
+    }
+
+    /**
+     * 填充并保存决策记录（集中赋值，避免分支内零散操作）
+     */
+    private void fillAndSaveDecisionRecord(RiskDecisionRecord record, DecisionResult decisionResult, BigDecimal pythonRiskProbability) {
+        // 基础字段赋值
+        record.setRiskDecision(decisionResult.getFinalDecision());
+        record.setDecisionReason(decisionResult.getDecisionReason());
+        record.setDataModelProb(pythonRiskProbability);
+
+        // AI复查分支的特殊字段赋值
+        if (decisionResult.getAgentProb() != null) {
+            record.setAgentProb(decisionResult.getAgentProb());
+            record.setFinalRiskProb(decisionResult.getAgentProb());
+        }
+
+        // 兜底：确保finalRiskProb有值
+        if (record.getFinalRiskProb() == null) {
+            record.setFinalRiskProb(pythonRiskProbability);
+        }
+
+        // 统一保存
+        this.save(record);
+    }
+
+    /**
+     * 核心修正：BigDecimal比较逻辑 + 百分比格式化
+     */
+    private DecisionResult makeCoreDecision(BigDecimal pythonRiskProbability, RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
+        // 1. 直接承保（0-0.3）：使用compareTo比较BigDecimal
+        if (pythonRiskProbability.compareTo(RiskDecisionConstant.DIRECT_ACCEPT_THRESHOLD) <= 0) {
+            int percent = convertDecimalToPercent(pythonRiskProbability);
+            return new DecisionResult(
+                    DecisionResultEnum.DIRECT_ACCEPT.getChineseName(),
+                    String.format("风险概率%d%%，符合直接承保条件，进入保费定价", percent),
+                    null,
+                    null
+            );
+        }
+
+        // 2. 直接拒保（0.7-1）：使用compareTo比较BigDecimal
+        if (pythonRiskProbability.compareTo(RiskDecisionConstant.DIRECT_REJECT_THRESHOLD) >= 0) {
+            int percent = convertDecimalToPercent(pythonRiskProbability);
+            return new DecisionResult(
+                    DecisionResultEnum.DIRECT_REJECT.getChineseName(),
+                    String.format("风险概率%d%%，符合直接拒保条件", percent),
+                    null,
+                    null
+            );
+        }
+
+        // 3. AI复查（0.3-0.7）：抽离到独立方法
+        return handleAiReview(pythonRiskProbability, request, pythonResp);
+    }
+
+    /**
+     * 修正：百分比格式化 + AI复查结果封装
+     */
+    private DecisionResult handleAiReview(BigDecimal pythonRiskProbability, RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
+        RiskAIAnalysisResponse aiResp = callRiskAIAnalysisApi(request, pythonResp);
+        Assert.notNull(aiResp, "AI复查接口返回为空");
+        Assert.notNull(aiResp.getFinalDecision(), "AI复查必须返回最终决策结果（承保/拒保）");
+
+        // 小数转百分比整数（如0.35 → 35%）
+        int percent = convertDecimalToPercent(pythonRiskProbability);
+        // 封装AI复查后的决策结果
+        String decisionReason = String.format(
+                "风险概率%d%%，进入AI复查；AI复查结论：%s，最终决策：%s",
+                percent, aiResp.getReviewConclusion(), aiResp.getFinalDecision()
+        );
+
+        // 修正：使用全参构造器（或lombok的@AllArgsConstructor）
+        DecisionResult aiDecisionResult = new DecisionResult();
+        aiDecisionResult.setFinalDecision(aiResp.getFinalDecision());
+        aiDecisionResult.setDecisionReason(decisionReason);
+        aiDecisionResult.setAiReviewData(aiResp);
+        aiDecisionResult.setAgentProb(aiResp.getAgentRiskProb());
+
+        return aiDecisionResult;
+    }
+
+    /**
+     * 新增：0-1小数转0-100百分比整数（统一格式化逻辑）
+     */
+    private int convertDecimalToPercent(BigDecimal decimal) {
+        return decimal.multiply(PERCENT_SCALE)
+                .setScale(0, RoundingMode.HALF_UP) // 四舍五入取整
+                .intValue();
+    }
+
+    /**
+     * 初始化决策记录（抽离重复的初始化逻辑）
+     */
+    private RiskDecisionRecord initDecisionRecord(RiskDecisionDTO request, BigDecimal pythonRiskProbability) {
+        return new RiskDecisionRecord()
+                .setPolicyHolderId(request.getPolicyHolderId())
+                .setTraceId(TraceIdContext.getTraceId())
+                .setAntiRecordId(1L);    // TODO 设置关联逆选择记录ID
+    }
+
+    /**
+     * 入参全量校验（避免空指针）
+     */
+    private void validateRequest(RiskDecisionDTO request) {
+        Assert.notNull(request, "风险决策请求参数不能为空");
+        Assert.notNull(request.getPolicyHolderId(), "投保人ID不能为空");
+        // 校验totalRiskValue范围（0-1）
+        if (request.getTotalRiskValue() != null) {
+            Assert.isTrue(request.getTotalRiskValue().compareTo(MIN_RISK_VALUE) >= 0
+                            && request.getTotalRiskValue().compareTo(MAX_RISK_VALUE) <= 0,
+                    "总风险值必须为0-1之间的数值");
+        }
+    }
+
+    /**
+     * 求体传错问题 + 投保人非空校验
+     */
     RiskDecisionPythonResponse callPostRiskApi(RiskDecisionDTO request) {
         Long policyHolderId = request.getPolicyHolderId();
+        // 投保人非空校验
         PolicyHolder policyHolder = policyHolderMapper.selectById(policyHolderId);
-        Integer age = policyHolder.getAge();
+        Assert.notNull(policyHolder, "投保人信息不存在，policyHolderId=" + policyHolderId);
 
+        Integer age = policyHolder.getAge();
         String occupation = policyHolder.getOccupation();
         BigDecimal occRiskValue = occupationRiskDictMapper.getRiskValueByOccupationName(occupation);
         int occRiskLevel = mapRiskValueToLevel(occRiskValue);
 
         int score = convertTwoDecimal01To0100Int(request.getTotalRiskValue());
-
 
         RiskDecisionPythonRequest riskDecisionPythonRequest = new RiskDecisionPythonRequest()
                 .setTraceId(TraceIdContext.getTraceId())
@@ -70,69 +254,72 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
                 .setInsureAmount(request.getInsureAmount())
                 .setHasHistoryDisease(false);
 
+        // 请求体从request → riskDecisionPythonRequest
         return pythonApiHttpClient.callPythonApi(
-                HttpMethod.POST,       // 手动指定POST请求
-                "/risk/calculate",     // 路径参数
-                request,               // 请求体
-                RiskDecisionPythonResponse.class // 响应类型
+                HttpMethod.POST,
+                "/risk/calculate",
+                riskDecisionPythonRequest, // 原错误：传了request，现已修正
+                RiskDecisionPythonResponse.class
         );
     }
 
     /**
-     * 将0-1之间、仅两位小数的BigDecimal转为0-100的整数
-     * @param totalRiskValue 0-1之间的两位小数（可能为null）
-     * @return 0-100的整数
+     * 0-1小数转0-100整数
      */
     public int convertTwoDecimal01To0100Int(BigDecimal totalRiskValue) {
-        // 空值处理：null直接返回0
         if (totalRiskValue == null) {
             return 0;
         }
-
-        // 核心操作：两位小数的0-1数值 × 100（必然得到整数）
-        BigDecimal multiplied = totalRiskValue.multiply(new BigDecimal("100"));
-
-        // 转为整数（因是两位小数，无需四舍五入，直接取整即可）
+        BigDecimal multiplied = totalRiskValue.multiply(PERCENT_SCALE);
         int intValue;
         try {
-            // intValueExact：确保是整数（若输入非两位小数，抛异常，也可根据业务调整）
             intValue = multiplied.intValueExact();
         } catch (ArithmeticException e) {
-            // 极端情况（如输入非两位小数）：兜底用常规取整
             intValue = multiplied.setScale(0, RoundingMode.HALF_UP).intValue();
         }
-
-        // 范围兜底：确保结果严格在0-100之间
         return Math.max(0, Math.min(100, intValue));
     }
 
     /**
-     * 将0-1区间的riskValue映射为0-4的整数等级（5个等级）
-     * @param riskValue 0-1之间的两位小数（允许null，允许超出0-1范围）
-     * @return 0-4的整数（0=低风险，1=较低风险，2=中风险，3=高风险，4=极高风险）
+     * 风险值映射等级（逻辑不变，保留）
      */
     public int mapRiskValueToLevel(BigDecimal riskValue) {
-        // 1. 空值处理：null直接返回0（低风险）
         if (riskValue == null) {
             return 0;
         }
-
-        // 2. 范围兜底：确保数值在0-1之间（负数→0，大于1→1）
-        BigDecimal normalizedValue = riskValue.max(MIN_RISK_VALUE).min(MAX_RISK_VALUE);
-        // 确保数值是两位小数（避免0.199999这类精度问题导致判断错误）
-        normalizedValue = normalizedValue.setScale(2, RoundingMode.HALF_UP);
-
-        // 3. 区间判断，映射到0-4的等级
+        BigDecimal normalizedValue = riskValue.max(MIN_RISK_VALUE).min(MAX_RISK_VALUE)
+                .setScale(2, RoundingMode.HALF_UP);
         if (normalizedValue.compareTo(LEVEL_1_THRESHOLD) < 0) {
-            return 0; // [0.00, 0.20) → 0级
+            return 0;
         } else if (normalizedValue.compareTo(LEVEL_2_THRESHOLD) < 0) {
-            return 1; // [0.20, 0.40) → 1级
+            return 1;
         } else if (normalizedValue.compareTo(LEVEL_3_THRESHOLD) < 0) {
-            return 2; // [0.40, 0.60) → 2级
+            return 2;
         } else if (normalizedValue.compareTo(LEVEL_4_THRESHOLD) < 0) {
-            return 3; // [0.60, 0.80) → 3级
+            return 3;
         } else {
-            return 4; // [0.80, 1.00] → 4级
+            return 4;
         }
+    }
+
+    /**
+     * 新增：AI复查接口调用实现
+     */
+    private RiskAIAnalysisResponse callRiskAIAnalysisApi(RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
+        // 模拟AI复查逻辑（实际替换为真实接口调用）
+        RiskAIAnalysisResponse aiResp = new RiskAIAnalysisResponse();
+        BigDecimal pythonProb = pythonResp.getPythonRiskProbability();
+
+        // AI复查决策逻辑示例：0.3-0.5承保，0.5-0.7拒保
+        if (pythonProb.compareTo(new BigDecimal("0.5")) <= 0) {
+            aiResp.setFinalDecision(DecisionResultEnum.DIRECT_ACCEPT.getChineseName());
+            aiResp.setReviewConclusion("AI复查通过，风险可控，建议承保");
+            aiResp.setAgentRiskProb(pythonProb.multiply(new BigDecimal("0.9")).setScale(3, RoundingMode.HALF_UP));
+        } else {
+            aiResp.setFinalDecision(DecisionResultEnum.DIRECT_REJECT.getChineseName());
+            aiResp.setReviewConclusion("AI复查发现潜在风险，建议拒保");
+            aiResp.setAgentRiskProb(pythonProb.multiply(new BigDecimal("1.1")).setScale(3, RoundingMode.HALF_UP));
+        }
+        return aiResp;
     }
 }
