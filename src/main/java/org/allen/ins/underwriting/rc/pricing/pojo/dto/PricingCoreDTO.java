@@ -2,12 +2,15 @@ package org.allen.ins.underwriting.rc.pricing.pojo.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.experimental.Accessors;
+
 import java.math.BigDecimal;
 
 /**
  * 保费定价请求DTO（决策完成后，内部调用定价接口用）
  */
 @Data
+@Accessors(chain = true)
 public class PricingCoreDTO {
     /**
      * 投保人ID
@@ -27,7 +30,7 @@ public class PricingCoreDTO {
     @NotNull(message = "风险概率不能为空")
     @DecimalMin(value = "0", message = "风险概率必须大于0（如0.001=0.1%）")
     @DecimalMax(value = "1", message = "风险概率不能大于1（否则保费超过保额）")
-    @Digits(integer = 1, fraction = 3, message = "风险概率最多保留3位小数（如0.001234）")
+    @Digits(integer = 1, fraction = 6, message = "风险概率最多保留6位小数（如0.001234）")
     private BigDecimal riskProbability;
 
     /**
@@ -35,7 +38,7 @@ public class PricingCoreDTO {
      */
     @NotNull(message = "成本系数不能为空")
     @DecimalMin(value = "0", inclusive = true, message = "成本系数不能为负数")
-    @Digits(integer = 1, fraction = 3, message = "成本系数最多保留3位小数（如0.1234）")
+    @Digits(integer = 1, fraction = 6, message = "成本系数最多保留6位小数（如0.12346）")
     private BigDecimal costCoefficient;
 
     /**
@@ -43,6 +46,6 @@ public class PricingCoreDTO {
      */
     @NotNull(message = "利润系数不能为空")
     @DecimalMin(value = "0", inclusive = true, message = "利润系数不能为负数")
-    @Digits(integer = 1, fraction = 3, message = "利润系数最多保留3位小数（如0.0567）")
+    @Digits(integer = 1, fraction = 6, message = "利润系数最多保留3位小数（如0.056789）")
     private BigDecimal profitCoefficient;
 }

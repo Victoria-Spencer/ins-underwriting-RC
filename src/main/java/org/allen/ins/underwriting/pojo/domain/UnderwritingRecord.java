@@ -1,6 +1,9 @@
 package org.allen.ins.underwriting.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -11,6 +14,7 @@ import java.time.LocalDateTime;
  * 汇总整个承保流程结果，最终归档
  */
 @Data
+@Accessors(chain = true)
 public class UnderwritingRecord implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -41,13 +45,14 @@ public class UnderwritingRecord implements Serializable {
     private Long pricingRecordId;
 
     /**
-     * 承保结果（承保/拒保/加费）
+     * 承保结果（承保/拒保）
      */
     private String underwritingResult;
 
     /**
      * 承保时间
      */
+    @TableField(value = "calculate_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime underwritingTime;
 
     /**
