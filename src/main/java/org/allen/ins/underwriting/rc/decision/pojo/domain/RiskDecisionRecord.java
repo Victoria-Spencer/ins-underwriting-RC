@@ -68,7 +68,7 @@ public class RiskDecisionRecord implements Serializable {
     /**
      * 创建时间
      */
-    @TableField(value = "createTime", fill = FieldFill.INSERT)
+    @TableField(value = "create_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime createTime;
 
 //    /**

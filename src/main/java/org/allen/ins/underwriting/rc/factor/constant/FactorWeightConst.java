@@ -15,10 +15,10 @@ public final class FactorWeightConst {
     static {
         // 保额因子
         WEIGHT_MAP = Map.of(
-                "RISK_FACTOR_AGE", new BigDecimal("0.8"),       // 权重（年龄风险因子）
-                "RISK_FACTOR_OCCUPATION", new BigDecimal("1.0"),    // 权重（职业风险因子）
-                "RISK_FACTOR_AMOUNT", new BigDecimal("1.2"),        // 权重（保额风险因子）
-                "RISK_FACTOR_HEALTH", new BigDecimal("1.2")         // 权重（健康风险因子）
+                "RISK_FACTOR_AGE", new BigDecimal("0.2"),       // 权重（年龄风险因子）
+                "RISK_FACTOR_OCCUPATION", new BigDecimal("0.2"),    // 权重（职业风险因子）
+                "RISK_FACTOR_AMOUNT", new BigDecimal("0.3"),        // 权重（保额风险因子）
+                "RISK_FACTOR_HEALTH", new BigDecimal("0.3")         // 权重（健康风险因子）
         );
     }
 

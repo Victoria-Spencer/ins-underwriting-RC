@@ -18,7 +18,8 @@ public class WebMvcInterceptorConfig implements WebMvcConfigurer {
                 // 拦截核保/风控相关的所有接口
                 .addPathPatterns(
                         "/underwriting/**",    // 核保相关接口
-                        "/rc/decision/**"    // 风控决策相关接口
+                        "/rc/decision/**",     // 风控决策相关接口
+                        "/rc/factor/**"        // 凤险因子相关接口
                 )
                 // 排除静态资源等无关接口
                 .excludePathPatterns(

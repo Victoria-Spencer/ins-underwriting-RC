@@ -81,8 +81,7 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
                 .setTotalRiskValue(totalRiskValue)
                 .setPolicyHolderId(policyHolderId)
                 .setTraceId(traceId)
-                .setCalculatorUser(SystemConstant.DEFAULT_CALCULATOR_USER)
-                .setCalculateTime(LocalDateTime.now());
+                .setCalculatorUser(SystemConstant.DEFAULT_CALCULATOR_USER);
 
         boolean isSuccess = this.save(riskFactorRecord);
         if (!isSuccess) {

@@ -1,6 +1,7 @@
 package org.allen.ins.underwriting.rc.decision.pojo.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Digits;
 import lombok.Data;
 
@@ -19,6 +20,7 @@ public class RiskDecisionPythonResponse {
      * 1. @Digits：整数位最多1位（0-1），小数位最多6位，入参时校验
      * 2. @JsonFormat：序列化返回前端时，强制保留6位小数（如0.8 → 0.800000）
      */
+    @JsonProperty("python_risk_probability")
     @Digits(integer = 1, fraction = 6, message = "Python风险概率仅支持0-1之间的数值，且最多保留6位小数")
     @JsonFormat(shape = JsonFormat.Shape.NUMBER, pattern = "0.000000")
     private BigDecimal pythonRiskProbability;
@@ -26,10 +28,12 @@ public class RiskDecisionPythonResponse {
     /**
      * Python侧风险评估说明（仅供参考）
      */
+    @JsonProperty("python_riskAnalysis")
     private String pythonRiskAnalysis;
 
     /**
      * python侧结论
      */
+    @JsonProperty("decision_conclusion")
     private String decisionConclusion;
 }
