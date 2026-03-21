@@ -254,11 +254,11 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
                 .setInsureAmount(request.getInsureAmount())
                 .setHasHistoryDisease(false);
 
-        // 请求体从request → riskDecisionPythonRequest
+        // 请求体 riskDecisionPythonRequest
         return pythonApiHttpClient.callPythonApi(
                 HttpMethod.POST,
                 "/risk/calculate",
-                riskDecisionPythonRequest, // 原错误：传了request，现已修正
+                riskDecisionPythonRequest,
                 RiskDecisionPythonResponse.class
         );
     }
@@ -323,10 +323,10 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
         // AI复查决策逻辑示例：0.3-0.5承保，0.5-0.7拒保
         if (agentRiskProb.compareTo(new BigDecimal("0.5")) <= 0) {
             aiResp.setFinalDecision(DecisionResultEnum.DIRECT_ACCEPT.getChineseName());
-            aiResp.setReviewConclusion("AI复查通过，风险可控，建议承保");
+//            aiResp.setReviewConclusion("AI复查通过，风险可控，建议承保");
         } else {
             aiResp.setFinalDecision(DecisionResultEnum.DIRECT_REJECT.getChineseName());
-            aiResp.setReviewConclusion("AI复查发现潜在风险，建议拒保");
+//            aiResp.setReviewConclusion("AI复查发现潜在风险，建议拒保");
         }
         return aiResp;
     }
@@ -369,7 +369,7 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
                                         "- 保额风险值：%s\n" +
                                         "- 健康风险值：%s\n" +
                                         "- 总风险值：%s\n" +
-                                        "请给出核保结论及详细理由",
+                                        "请给出风险概率及详细理由",
                                 request.getPolicyHolderId(),
                                 pythonResp.getPythonRiskProbability(),
                                 pythonResp.getPythonRiskAnalysis(),

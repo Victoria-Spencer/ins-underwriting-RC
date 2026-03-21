@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Data
 public class RiskAIAnalysisResponse {
     private String finalDecision;       // AI复查最终决策（承保/拒保）
-    private String reviewConclusion;    // AI复查结论
     private BigDecimal agentRiskProb;   // AI复查风险概率
-    private RiskAIDetailDTO aiReviewData;        // AI复查明细
+    private String reviewConclusion;    // AI复查结论
+//    private RiskAIDetailDTO aiReviewData;        // AI复查明细
 }
