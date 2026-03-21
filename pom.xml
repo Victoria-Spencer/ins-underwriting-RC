@@ -68,6 +68,19 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
             <version>3.5.16</version>
+            <!-- 关键：排除MP自带的mybatis-spring 2.1.2 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.mybatis</groupId>
+                    <artifactId>mybatis-spring</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+            <version>3.0.3</version> <!-- 唯一适配Spring 6.x的版本 -->
         </dependency>
 
         <!-- MySQL驱动（适配Spring Boot 3.x用8.0+版本） -->
