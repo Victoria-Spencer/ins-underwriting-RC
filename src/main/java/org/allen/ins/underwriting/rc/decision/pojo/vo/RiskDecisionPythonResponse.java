@@ -24,8 +24,12 @@ public class RiskDecisionPythonResponse {
     private BigDecimal pythonRiskProbability;
 
     /**
-     * Python侧风险评估说明（可选，供Java端参考，如“健康风险占比60%，职业风险占比40%”）
-     * 说明：非决策原因，仅为加权时提供参考维度
+     * Python侧风险评估说明（仅供参考）
      */
     private String pythonRiskAnalysis;
+
+    /**
+     * python侧结论
+     */
+    private String decisionConclusion;
 }

@@ -11,6 +11,6 @@ import java.math.BigDecimal;
 public class RiskAIAnalysisResponse {
     private String finalDecision;       // AI复查最终决策（承保/拒保）
     private BigDecimal agentRiskProb;   // AI复查风险概率
+    private String riskAnalysis;        // AI侧风险评估说明（仅供参考）
     private String reviewConclusion;    // AI复查结论
-//    private RiskAIDetailDTO aiReviewData;        // AI复查明细
 }

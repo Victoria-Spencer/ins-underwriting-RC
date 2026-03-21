@@ -2,6 +2,8 @@ package org.allen.ins.underwriting.rc.decision.pojo.vo;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  * 承保决策结果VO
  */
@@ -18,7 +20,8 @@ public class RiskDecisionVO {
     private String decisionReason;
 
     /**
-     * 加费比例（仅加费承保时返回，如：20%）
+     * 最终风险概率（0-1，dataModelProb <= 0.3或 >= 0.7则选data_model_prob；否则agent_prob）
      */
-//    private String extraFeeRatio;
+    private BigDecimal riskProb;
+
 }
