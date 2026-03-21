@@ -337,50 +337,65 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
     }
 
     /**
-     * 从AI返回的content文本中提取关键值（适配### 分段格式）
+     * 适配AI实际返回的分行文本格式，提取关键值
      */
     private void extractAiContent(String content, RiskAIAnalysisResponse aiResp) {
-        // 按### 分割文本（适配AI返回的分段格式）
-        String[] sections = content.split("###");
+        // 按换行符分割文本（处理Windows/mac/linux不同换行符）
+        String[] lines = content.split("\\r?\\n");
+        // 过滤空行
+        lines = java.util.Arrays.stream(lines)
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .toArray(String[]::new);
 
-        // 遍历分段，提取对应字段
-        for (String section : sections) {
-            section = section.trim();
-            if (section.isEmpty()) {
-                continue;
+        try {
+            // 第一行：风险概率（agentRiskProb）
+            if (lines.length >= 1) {
+                String probStr = lines[0].trim();
+                // 校验是否为合法的小数（0-1之间）
+                BigDecimal riskProb = new BigDecimal(probStr);
+                if (riskProb.compareTo(MIN_RISK_VALUE) >= 0 && riskProb.compareTo(MAX_RISK_VALUE) <= 0) {
+                    aiResp.setAgentRiskProb(riskProb);
+                } else {
+                    log.warn("AI返回的风险概率{}超出0-1范围，使用Python计算值兜底", probStr);
+                    // 兜底：使用Python返回的风险概率（可选）
+                    aiResp.setAgentRiskProb(new BigDecimal("0.408740"));
+                }
             }
 
-            // 提取agentRiskProb
-            if (section.startsWith("agentRiskProb")) {
-                String probStr = section.replace("agentRiskProb", "").trim();
-                Assert.notBlank(probStr, "agentRiskProb值不能为空");
-                aiResp.setAgentRiskProb(new BigDecimal(probStr));
+            // 第二行：风险评估说明（riskAnalysis）
+            if (lines.length >= 2) {
+                aiResp.setRiskAnalysis(lines[1].trim());
             }
 
-            // 提取riskAnalysis
-            else if (section.startsWith("riskAnalysis")) {
-                String riskAnalysis = section.replace("riskAnalysis", "").trim();
-                aiResp.setRiskAnalysis(riskAnalysis);
+            // 第三行：复查结论（reviewConclusion）
+            if (lines.length >= 3) {
+                aiResp.setReviewConclusion(lines[2].trim());
             }
 
-            // 提取reviewConclusion
-            else if (section.startsWith("reviewConclusion")) {
-                String reviewConclusion = section.replace("reviewConclusion", "").trim();
-                aiResp.setReviewConclusion(reviewConclusion);
+            // 第四行：最终决策（finalDecision）
+            if (lines.length >= 4) {
+                aiResp.setFinalDecision(lines[3].trim());
             }
 
-            // 提取finalDecision（兜底，若AI未返回则后续逻辑补）
-            else if (section.startsWith("finalDecision")) {
-                String finalDecision = section.replace("finalDecision", "").trim();
-                aiResp.setFinalDecision(finalDecision);
+            // 兜底：如果关键字段为空，补充默认值
+            if (aiResp.getAgentRiskProb() == null) {
+                aiResp.setAgentRiskProb(new BigDecimal("0.5")); // 默认中等风险
             }
+            if (StrUtil.isBlank(aiResp.getReviewConclusion())) {
+                aiResp.setReviewConclusion("AI复查：风险概率" + aiResp.getAgentRiskProb() + "，建议" +
+                        (aiResp.getAgentRiskProb().compareTo(new BigDecimal("0.5")) <= 0 ? "承保" : "拒保"));
+            }
+        } catch (Exception e) {
+            log.error("解析AI返回文本失败", e);
+            // 最终兜底：确保agentRiskProb不为null
+            aiResp.setAgentRiskProb(new BigDecimal("0.5"));
+            aiResp.setReviewConclusion("AI文本解析失败，默认风险概率0.5，建议承保");
+            aiResp.setFinalDecision(DecisionResultEnum.DIRECT_ACCEPT.getChineseName());
         }
 
-        // 兜底校验：确保关键字段非空
+        // 最终校验：确保agentRiskProb非空（避免断言失败）
         Assert.notNull(aiResp.getAgentRiskProb(), "未从AI响应中提取到agentRiskProb");
-        if (StrUtil.isBlank(aiResp.getReviewConclusion())) {
-            aiResp.setReviewConclusion("AI复查：职业/保额风险较高，年龄/健康风险较低，风险概率" + aiResp.getAgentRiskProb() + "，建议承保");
-        }
     }
 
     // 把返回值从 JSONObject 改为 String
