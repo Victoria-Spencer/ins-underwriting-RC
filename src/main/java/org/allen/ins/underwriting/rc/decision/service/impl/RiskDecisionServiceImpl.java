@@ -1,6 +1,10 @@
 package org.allen.ins.underwriting.rc.decision.service.impl;
 
 import cn.hutool.core.lang.Assert;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
@@ -13,17 +17,22 @@ import org.allen.ins.underwriting.pojo.domain.PolicyHolder;
 import org.allen.ins.underwriting.rc.decision.constant.RiskDecisionConstant;
 import org.allen.ins.underwriting.rc.decision.pojo.domain.RiskDecisionRecord;
 import org.allen.ins.underwriting.rc.decision.dao.RiskDecisionMapper;
+import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskAIAnalysisRequest;
 import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskDecisionDTO;
 import org.allen.ins.underwriting.rc.decision.pojo.dto.RiskDecisionPythonRequest;
 import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskAIAnalysisResponse;
 import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionPythonResponse;
 import org.allen.ins.underwriting.rc.decision.pojo.vo.RiskDecisionVO;
 import org.allen.ins.underwriting.rc.decision.service.RiskDecisionService;
+import org.allen.ins.underwriting.rc.decision.util.GenericAiCallUtil;
 import org.allen.ins.underwriting.rc.decision.util.PythonApiHttpClient;
+import org.allen.ins.underwriting.rc.factor.dao.RiskFactorMapper;
 import org.allen.ins.underwriting.rc.factor.enums.DecisionResultEnum;
+import org.allen.ins.underwriting.rc.factor.pojo.domain.RiskFactorRecord;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -37,6 +46,8 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
     private PolicyHolderMapper policyHolderMapper;
     @Resource
     private OccupationRiskDictMapper occupationRiskDictMapper;
+    @Resource
+    private RiskFactorMapper riskFactorMapper;
 
     // 定义5个等级的临界值（0-1区间，两位小数）
     private static final BigDecimal LEVEL_1_THRESHOLD = new BigDecimal("0.20");
@@ -101,9 +112,6 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
         RiskDecisionVO vo = new RiskDecisionVO();
         vo.setDecisionResult(decisionResult.getFinalDecision());
         vo.setDecisionReason(decisionResult.getDecisionReason());
-        vo.setAiReviewData(decisionResult.getAiReviewData());
-        // 仅承保场景标记定价
-        vo.setPricingFlag(DecisionResultEnum.DIRECT_ACCEPT.getChineseName().equals(decisionResult.getFinalDecision()));
         return vo;
     }
 
@@ -298,20 +306,83 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
      * 新增：AI复查接口调用实现
      */
     private RiskAIAnalysisResponse callRiskAIAnalysisApi(RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
-        // 模拟AI复查逻辑（实际替换为真实接口调用）
-        RiskAIAnalysisResponse aiResp = new RiskAIAnalysisResponse();
-        BigDecimal pythonProb = pythonResp.getPythonRiskProbability();
+        // AI复查
+        JSONObject requestBody = getRequestBody(request, pythonResp);
+
+
+        RiskAIAnalysisResponse aiResp = null;
+
+        try {
+            aiResp = GenericAiCallUtil.callAiApi(requestBody, RiskAIAnalysisResponse.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        BigDecimal agentRiskProb = aiResp.getAgentRiskProb();
 
         // AI复查决策逻辑示例：0.3-0.5承保，0.5-0.7拒保
-        if (pythonProb.compareTo(new BigDecimal("0.5")) <= 0) {
+        if (agentRiskProb.compareTo(new BigDecimal("0.5")) <= 0) {
             aiResp.setFinalDecision(DecisionResultEnum.DIRECT_ACCEPT.getChineseName());
             aiResp.setReviewConclusion("AI复查通过，风险可控，建议承保");
-            aiResp.setAgentRiskProb(pythonProb.multiply(new BigDecimal("0.9")).setScale(3, RoundingMode.HALF_UP));
         } else {
             aiResp.setFinalDecision(DecisionResultEnum.DIRECT_REJECT.getChineseName());
             aiResp.setReviewConclusion("AI复查发现潜在风险，建议拒保");
-            aiResp.setAgentRiskProb(pythonProb.multiply(new BigDecimal("1.1")).setScale(3, RoundingMode.HALF_UP));
         }
         return aiResp;
+    }
+
+    private JSONObject getRequestBody(RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
+        String traceId = TraceIdContext.getTraceId();
+        RiskFactorRecord factorRecord = riskFactorMapper.selectOne(
+                new QueryWrapper<RiskFactorRecord>().eq("trace_id", traceId)
+        );
+
+        if (factorRecord == null) {
+            throw new RuntimeException("未查询到traceId=" + traceId + "对应的风险因子记录");
+        }
+        BigDecimal ageRiskValue = factorRecord.getAgeRiskValue();
+        BigDecimal occupationRiskValue = factorRecord.getOccupationRiskValue();
+        BigDecimal amountRiskValue = factorRecord.getAmountRiskValue();
+        BigDecimal healthRiskValue = factorRecord.getHealthRiskValue();
+        BigDecimal totalRiskValue = factorRecord.getTotalRiskValue();
+
+        RiskAIAnalysisRequest riskAIAnalysisRequest = new RiskAIAnalysisRequest()
+                .setPolicyHolderId(request.getPolicyHolderId())
+                .setPythonRiskProbability(pythonResp.getPythonRiskProbability())
+                .setPythonRiskAnalysis(pythonResp.getPythonRiskAnalysis())
+                .setAgeRiskValue(ageRiskValue)
+                .setOccupationRiskValue(occupationRiskValue)
+                .setAmountRiskValue(amountRiskValue)
+                .setHealthRiskValue(healthRiskValue)
+                .setTotalRiskValue(totalRiskValue);
+
+        return new JSONObject()
+                // 1. 核心必填：messages（直接拼接业务内容，无需DTO中转）
+                .put("messages", new JSONArray().add(new JSONObject()
+                        .put("role", "user")
+                        .put("content", String.format(
+                                "请复核投保人%s的风险信息：\n" +
+                                        "- Python计算风险概率：%s\n" +
+                                        "- Python风险分析：%s\n" +
+                                        "- 年龄风险值：%s\n" +
+                                        "- 职业风险值：%s\n" +
+                                        "- 保额风险值：%s\n" +
+                                        "- 健康风险值：%s\n" +
+                                        "- 总风险值：%s\n" +
+                                        "请给出核保结论及详细理由",
+                                request.getPolicyHolderId(),
+                                pythonResp.getPythonRiskProbability(),
+                                pythonResp.getPythonRiskAnalysis(),
+                                factorRecord.getAgeRiskValue(),
+                                factorRecord.getOccupationRiskValue(),
+                                factorRecord.getAmountRiskValue(),
+                                factorRecord.getHealthRiskValue(),
+                                factorRecord.getTotalRiskValue()
+                        ))
+                ))
+                // 2. 可选参数：temperature
+                .put("temperature", 0.1)
+                // 3. 可选参数：stream
+                .put("stream", false);
     }
 }

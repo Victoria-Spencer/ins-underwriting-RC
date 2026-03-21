@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class RiskDecisionVO {
     /**
-     * 决策结果（承保/拒保/加费承保/核保中）
+     * 决策结果（承保/拒保）
      */
     private String decisionResult;
 
@@ -20,5 +20,5 @@ public class RiskDecisionVO {
     /**
      * 加费比例（仅加费承保时返回，如：20%）
      */
-    private String extraFeeRatio;
+//    private String extraFeeRatio;
 }
