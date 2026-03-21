@@ -5,12 +5,14 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import okhttp3.*;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
 
 /**
  * 纯 JUnit 测试：完全不依赖 Spring，不加载任何项目代码
  */
+@SpringBootTest
 public class DoubaoLlmTest {
 
     // 硬编码配置（替代 @Value，彻底脱离 Spring）

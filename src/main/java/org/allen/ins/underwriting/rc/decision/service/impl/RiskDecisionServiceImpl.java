@@ -73,7 +73,7 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
         RiskDecisionRecord decisionRecord = initDecisionRecord(request, pythonRiskProbability);
 
         // ========== 2. 核心决策逻辑（主流程极简） ==========
-        DecisionResult decisionResult = makeCoreDecision(pythonRiskProbability, request, pythonResp);
+        DecisionResult decisionResult = makeCoreDecision(request, pythonResp);
 
         // ========== 3. 决策记录赋值 & 保存（集中处理） ==========
         fillAndSaveDecisionRecord(decisionRecord, decisionResult, pythonRiskProbability);
@@ -134,7 +134,9 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
     /**
      * 核心修正：BigDecimal比较逻辑 + 百分比格式化
      */
-    private DecisionResult makeCoreDecision(BigDecimal pythonRiskProbability, RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
+    private DecisionResult makeCoreDecision(RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
+        BigDecimal pythonRiskProbability = pythonResp.getPythonRiskProbability();
+
         // 1. 直接承保（0-0.3）：使用compareTo比较BigDecimal
         if (pythonRiskProbability.compareTo(RiskDecisionConstant.DIRECT_ACCEPT_THRESHOLD) <= 0) {
             int percent = convertDecimalToPercent(pythonRiskProbability);
