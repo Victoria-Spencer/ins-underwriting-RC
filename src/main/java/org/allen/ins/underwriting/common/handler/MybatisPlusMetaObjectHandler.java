@@ -38,10 +38,18 @@ public class MybatisPlusMetaObjectHandler implements MetaObjectHandler {
                 LocalDateTime.now()
         );
 
-        // ========= 3. 计算时间（calculateTime）
+        // ========= 3. 计算时间（calculateTime）=========
         this.strictInsertFill(
                 metaObject,
                 "calculateTime",
+                LocalDateTime.class,
+                LocalDateTime.now()
+        );
+
+        // ========= 4. 定价时间（calculateTime）=========
+        this.strictInsertFill(
+                metaObject,
+                "pricingTime",
                 LocalDateTime.class,
                 LocalDateTime.now()
         );

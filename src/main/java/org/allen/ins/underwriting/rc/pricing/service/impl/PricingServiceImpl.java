@@ -1,8 +1,12 @@
 package org.allen.ins.underwriting.rc.pricing.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.allen.ins.underwriting.common.util.TraceIdContext;
+import org.allen.ins.underwriting.rc.decision.dao.RiskDecisionMapper;
+import org.allen.ins.underwriting.rc.decision.pojo.domain.RiskDecisionRecord;
 import org.allen.ins.underwriting.rc.pricing.dao.PricingMapper;
 import org.allen.ins.underwriting.rc.pricing.pojo.domain.PricingRecord;
 import org.allen.ins.underwriting.rc.pricing.pojo.dto.PricingCoreDTO;
@@ -22,6 +26,8 @@ public class PricingServiceImpl  extends ServiceImpl<PricingMapper, PricingRecor
     private static final int PRECISION_SCALE = 2;
     private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
 
+    @Resource
+    private RiskDecisionMapper riskDecisionMapper;
 
     /**
      * 执行核心保费定价计算
@@ -63,9 +69,14 @@ public class PricingServiceImpl  extends ServiceImpl<PricingMapper, PricingRecor
     }
 
     private void savePricingRecord(@Valid PricingCoreDTO request, PricingCoreVO response) {
+        RiskDecisionRecord riskDecisionRecord = riskDecisionMapper.selectOne(
+                new QueryWrapper<RiskDecisionRecord>().eq("trace_id", TraceIdContext.getTraceId())
+        );
+
         PricingRecord record = new PricingRecord()
                 .setPolicyHolderId(request.getPolicyHolderId())
                 .setTraceId(TraceIdContext.getTraceId())
+                .setRiskDecisionId(riskDecisionRecord.getId())
                 .setBasePremium(response.getBasePremium())
                 .setFinalPremium(response.getFinalPremium())
                 .setPremium_start_time(LocalDateTime.now().plusDays(1))
@@ -79,10 +90,10 @@ public class PricingServiceImpl  extends ServiceImpl<PricingMapper, PricingRecor
      */
     private String buildFormulaDesc(PricingCoreDTO request, PricingCoreVO response) {
         return String.format(
-                "1. 预期赔付金额 = 投保保额(%d元) × 风险概率(%s) = %s元；" +
+                "1. 预期赔付金额 = 投保保额(%s元) × 风险概率(%s) = %s元；" +
                         "2. 基础保费 = 预期赔付金额(%s元) × (1 + 成本系数(%s)) = %s元；" +
                         "3. 最终保费 = 基础保费(%s元) × (1 + 利润系数(%s)) = %s元；" +
-                        "合并公式：最终保费 = %d × %s × (1+%s) × (1+%s) = %s元",
+                        "合并公式：最终保费 = %s × %s × (1+%s) × (1+%s) = %s元",
                 request.getInsureAmount(),
                 request.getRiskProbability(),
                 response.getExpectedPayoutAmount(),

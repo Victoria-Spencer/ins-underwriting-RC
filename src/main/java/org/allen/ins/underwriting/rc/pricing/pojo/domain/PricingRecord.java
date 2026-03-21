@@ -58,7 +58,7 @@ public class PricingRecord implements Serializable {
     /**
      * 定价时间
      */
-    @TableField(value = "calculate_time", fill = FieldFill.INSERT_UPDATE)
+    @TableField(value = "pricing_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime pricingTime;
 
     /**

@@ -337,7 +337,7 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
     }
 
     /**
-     * 适配AI实际返回的分行文本格式，提取关键值
+     * 适配AI实际返回的「字段名：值」格式，提取关键值
      */
     private void extractAiContent(String content, RiskAIAnalysisResponse aiResp) {
         // 按换行符分割文本（处理Windows/mac/linux不同换行符）
@@ -349,42 +349,60 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
                 .toArray(String[]::new);
 
         try {
-            // 第一行：风险概率（agentRiskProb）
-            if (lines.length >= 1) {
-                String probStr = lines[0].trim();
-                // 校验是否为合法的小数（0-1之间）
-                BigDecimal riskProb = new BigDecimal(probStr);
-                if (riskProb.compareTo(MIN_RISK_VALUE) >= 0 && riskProb.compareTo(MAX_RISK_VALUE) <= 0) {
-                    aiResp.setAgentRiskProb(riskProb);
-                } else {
-                    log.warn("AI返回的风险概率{}超出0-1范围，使用Python计算值兜底", probStr);
-                    // 兜底：使用Python返回的风险概率（可选）
-                    aiResp.setAgentRiskProb(new BigDecimal("0.408740"));
+            // 遍历每一行，按「字段名：值」格式解析
+            for (String line : lines) {
+                if (line.contains("：")) { // 中文冒号分割（AI返回的是中文冒号）
+                    String[] keyValue = line.split("：", 2); // 分割为[key, value]，只分割一次
+                    if (keyValue.length != 2) {
+                        continue; // 格式不合法，跳过
+                    }
+                    String key = keyValue[0].trim();
+                    String value = keyValue[1].trim();
+
+                    // 解析各个字段
+                    switch (key) {
+                        case "agentRiskProb":
+                            // 清理值：只保留数字和小数点，过滤其他字符
+                            String cleanProb = value.replaceAll("[^0-9.]", "");
+                            if (StrUtil.isNotBlank(cleanProb)) {
+                                BigDecimal riskProb = new BigDecimal(cleanProb);
+                                if (riskProb.compareTo(MIN_RISK_VALUE) >= 0 && riskProb.compareTo(MAX_RISK_VALUE) <= 0) {
+                                    aiResp.setAgentRiskProb(riskProb);
+                                } else {
+                                    log.warn("AI返回的风险概率{}超出0-1范围，使用Python计算值兜底", cleanProb);
+                                    aiResp.setAgentRiskProb(new BigDecimal("0.408740"));
+                                }
+                            }
+                            break;
+                        case "riskAnalysis":
+                            aiResp.setRiskAnalysis(value);
+                            break;
+                        case "reviewConclusion":
+                            aiResp.setReviewConclusion(value);
+                            break;
+                        case "finalDecision":
+                            aiResp.setFinalDecision(value);
+                            break;
+                        default:
+                            log.debug("未识别的字段：{}，值：{}", key, value);
+                            break;
+                    }
                 }
-            }
-
-            // 第二行：风险评估说明（riskAnalysis）
-            if (lines.length >= 2) {
-                aiResp.setRiskAnalysis(lines[1].trim());
-            }
-
-            // 第三行：复查结论（reviewConclusion）
-            if (lines.length >= 3) {
-                aiResp.setReviewConclusion(lines[2].trim());
-            }
-
-            // 第四行：最终决策（finalDecision）
-            if (lines.length >= 4) {
-                aiResp.setFinalDecision(lines[3].trim());
             }
 
             // 兜底：如果关键字段为空，补充默认值
             if (aiResp.getAgentRiskProb() == null) {
+                log.warn("未解析到agentRiskProb，使用默认值0.5");
                 aiResp.setAgentRiskProb(new BigDecimal("0.5")); // 默认中等风险
             }
             if (StrUtil.isBlank(aiResp.getReviewConclusion())) {
                 aiResp.setReviewConclusion("AI复查：风险概率" + aiResp.getAgentRiskProb() + "，建议" +
                         (aiResp.getAgentRiskProb().compareTo(new BigDecimal("0.5")) <= 0 ? "承保" : "拒保"));
+            }
+            if (StrUtil.isBlank(aiResp.getFinalDecision())) {
+                aiResp.setFinalDecision(aiResp.getAgentRiskProb().compareTo(new BigDecimal("0.5")) <= 0 ?
+                        DecisionResultEnum.DIRECT_ACCEPT.getChineseName() :
+                        DecisionResultEnum.DIRECT_REJECT.getChineseName());
             }
         } catch (Exception e) {
             log.error("解析AI返回文本失败", e);
