@@ -3,6 +3,7 @@ package org.allen.ins.underwriting.rc.decision.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -12,6 +13,7 @@ import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.allen.ins.underwriting.common.util.TraceIdContext;
 import org.allen.ins.underwriting.dao.PolicyHolderMapper;
 import org.allen.ins.underwriting.dao.dict.OccupationRiskDictMapper;
@@ -41,6 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,RiskDecisionRecord>
         implements RiskDecisionService {
 
@@ -291,35 +294,97 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
     }
 
     /**
-     * 新增：AI复查接口调用实现
+     * AI复查接口调用实现
      */
     private RiskAIAnalysisResponse callRiskAIAnalysisApi(RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
-        // AI复查
-        JSONObject requestBody = getRequestBody(request, pythonResp);
-
-
-        RiskAIAnalysisResponse aiResp = null;
+        // 1. 构建AI请求体
+        String requestBodyStr = getRequestBody(request, pythonResp);
+        RiskAIAnalysisResponse aiResp = new RiskAIAnalysisResponse();
 
         try {
-            aiResp = GenericAiCallUtil.callAiApi(requestBody, RiskAIAnalysisResponse.class);
+            // 2. 调用AI接口获取原始响应（仅通过工具类暴露的接口调用）
+            String rawAiResponse = GenericAiCallUtil.callAiApiForRawResponse(requestBodyStr);
+
+            // 3. 解析原始响应，提取AI返回的文本内容
+            JSONObject rawRespJson = JSONUtil.parseObj(rawAiResponse);
+            JSONArray choices = rawRespJson.getJSONArray("choices");
+            Assert.notEmpty(choices, "AI响应的choices数组不能为空");
+
+            JSONObject choice = choices.getJSONObject(0);
+            JSONObject message = choice.getJSONObject("message");
+            String content = message.getStr("content");
+            Assert.notBlank(content, "AI响应的content文本不能为空");
+            log.debug("AI复查返回文本内容：{}", content);
+
+            // 4. 从文本中提取关键值
+            extractAiContent(content, aiResp);
+            Assert.notNull(aiResp.getAgentRiskProb(), "从AI响应中提取agentRiskProb失败");
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("调用AI复查接口失败", e);
+            throw new RuntimeException("AI接口调用失败", e);
         }
 
+        // 5. 确定最终决策
         BigDecimal agentRiskProb = aiResp.getAgentRiskProb();
-
-        // AI复查决策逻辑示例：0.3-0.5承保，0.5-0.7拒保
         if (agentRiskProb.compareTo(new BigDecimal("0.5")) <= 0) {
             aiResp.setFinalDecision(DecisionResultEnum.DIRECT_ACCEPT.getChineseName());
-//            aiResp.setReviewConclusion("AI复查通过，风险可控，建议承保");
         } else {
             aiResp.setFinalDecision(DecisionResultEnum.DIRECT_REJECT.getChineseName());
-//            aiResp.setReviewConclusion("AI复查发现潜在风险，建议拒保");
         }
+
         return aiResp;
     }
 
-    private JSONObject getRequestBody(RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
+    /**
+     * 从AI返回的content文本中提取关键值（适配### 分段格式）
+     */
+    private void extractAiContent(String content, RiskAIAnalysisResponse aiResp) {
+        // 按### 分割文本（适配AI返回的分段格式）
+        String[] sections = content.split("###");
+
+        // 遍历分段，提取对应字段
+        for (String section : sections) {
+            section = section.trim();
+            if (section.isEmpty()) {
+                continue;
+            }
+
+            // 提取agentRiskProb
+            if (section.startsWith("agentRiskProb")) {
+                String probStr = section.replace("agentRiskProb", "").trim();
+                Assert.notBlank(probStr, "agentRiskProb值不能为空");
+                aiResp.setAgentRiskProb(new BigDecimal(probStr));
+            }
+
+            // 提取riskAnalysis
+            else if (section.startsWith("riskAnalysis")) {
+                String riskAnalysis = section.replace("riskAnalysis", "").trim();
+                aiResp.setRiskAnalysis(riskAnalysis);
+            }
+
+            // 提取reviewConclusion
+            else if (section.startsWith("reviewConclusion")) {
+                String reviewConclusion = section.replace("reviewConclusion", "").trim();
+                aiResp.setReviewConclusion(reviewConclusion);
+            }
+
+            // 提取finalDecision（兜底，若AI未返回则后续逻辑补）
+            else if (section.startsWith("finalDecision")) {
+                String finalDecision = section.replace("finalDecision", "").trim();
+                aiResp.setFinalDecision(finalDecision);
+            }
+        }
+
+        // 兜底校验：确保关键字段非空
+        Assert.notNull(aiResp.getAgentRiskProb(), "未从AI响应中提取到agentRiskProb");
+        if (StrUtil.isBlank(aiResp.getReviewConclusion())) {
+            aiResp.setReviewConclusion("AI复查：职业/保额风险较高，年龄/健康风险较低，风险概率" + aiResp.getAgentRiskProb() + "，建议承保");
+        }
+    }
+
+    // 把返回值从 JSONObject 改为 String
+    private String getRequestBody(RiskDecisionDTO request, RiskDecisionPythonResponse pythonResp) {
         String traceId = TraceIdContext.getTraceId();
         RiskFactorRecord factorRecord = riskFactorMapper.selectOne(
                 new QueryWrapper<RiskFactorRecord>().eq("trace_id", traceId)
@@ -335,7 +400,7 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
         BigDecimal healthRiskValue = factorRecord.getHealthRiskValue();
         BigDecimal totalRiskValue = factorRecord.getTotalRiskValue();
 
-        // ========== 核心调整：和Python端对齐的AI指令话术 ==========
+        // 构建AI指令话术
         String aiPrompt = String.format(
                 "请严格按照以下要求复核投保人%s的风险信息：\n" +
                         "1. 基础风险信息：\n" +
@@ -348,7 +413,7 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
                         "   - 总风险值：%s\n" +
                         "2. 返回要求（必须严格遵守，否则无法解析，无额外冗余文字）：\n" +
                         "   - 风险概率（agentRiskProb）：仅返回0-1之间的纯小数，保留6位小数（示例：0.450123），无单位、无解释性文字；\n" +
-                        "   - 风险评估说明（riskAnalysis）：返回详细的风险复核理由，围绕投保人风险特征展开，字数控制在50-200字，逻辑清晰、客观中立；\n" +
+                        "   - 风险评估说明（riskAnalysis）：返回详细的风险复核理由，围绕投保人风险特征展开，字数控制在20-200字，逻辑清晰、客观中立；\n" +
                         "   - 复查结论（reviewConclusion）：格式为「关键原因，次要原因，风险概率（保留6位小数），最终决策」，用中文逗号分隔，最终决策仅填「承保」或「拒保」，示例：风险因子总分85（极高），存在既往病史，0.850，拒保，无任何额外文字、标点或格式；\n" +
                         "   - 最终决策（finalDecision）：仅返回「承保」或「拒保」其中一个纯文字值，无任何额外字符；",
                 request.getPolicyHolderId(),
@@ -361,17 +426,21 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
                 formatBigDecimal(totalRiskValue)
         );
 
-        // ========== 和Python端对齐的JSON请求体 ==========
-        return new JSONObject()
-                // 1. 核心字段：messages（Python端约定的字段名）
-                .put("messages", new JSONArray().add(new JSONObject()
-                        .put("role", "user")  // Python端通常约定role为user/assistant
-                        .put("content", aiPrompt)  // 结构化指令，确保返回结果可解析
-                ))
-                // 2. 温度参数：和Python端约定的取值范围一致（0-1）
-                .put("temperature", 0.1)
-                // 3. 流式返回：Python端通常false表示一次性返回
-                .put("stream", false);
+        // ========== 核心修复：手动构建正确的JSON字符串，转义特殊字符 ==========
+        // 转义aiPrompt中的双引号、换行符，避免JSON语法错误
+        String escapedPrompt = aiPrompt
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n");
+
+        // 构建最终的JSON字符串（确保messages是数组）
+        String requestJson = String.format(
+                "{\"messages\":[{\"role\":\"user\",\"content\":\"%s\"}],\"temperature\":0.1,\"stream\":false}",
+                escapedPrompt
+        );
+
+        // 打印验证（生产环境用log）
+        log.debug("手动构建的JSON请求体：" + requestJson);
+        return requestJson;
     }
 
     private String formatBigDecimal(BigDecimal value) {
