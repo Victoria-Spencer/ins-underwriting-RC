@@ -3,6 +3,8 @@ package org.allen.ins.underwriting.rc.antiselection.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.allen.ins.underwriting.rc.antiselection.dao.AntiselectionMapper;
 import org.allen.ins.underwriting.rc.antiselection.pojo.domain.AntiselectionRecord;
+import org.allen.ins.underwriting.rc.antiselection.pojo.dto.AntiselectionRequestDTO;
+import org.allen.ins.underwriting.rc.antiselection.pojo.vo.AntiselectionVO;
 import org.allen.ins.underwriting.rc.antiselection.service.AntiselectionService;
 import org.springframework.stereotype.Service;
 

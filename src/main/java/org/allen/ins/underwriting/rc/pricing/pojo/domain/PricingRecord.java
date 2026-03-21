@@ -1,6 +1,9 @@
 package org.allen.ins.underwriting.rc.pricing.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,6 +15,7 @@ import java.math.BigDecimal;
  * 记录保费计算结果
  */
 @Data
+@Accessors(chain = true)
 public class PricingRecord implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -54,6 +58,7 @@ public class PricingRecord implements Serializable {
     /**
      * 定价时间
      */
+    @TableField(value = "calculate_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime pricingTime;
 
     /**
