@@ -151,7 +151,6 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
 
         // 1. 直接承保（0-0.3）：使用compareTo比较BigDecimal
         if (pythonRiskProbability.compareTo(RiskDecisionConstant.DIRECT_ACCEPT_THRESHOLD) <= 0) {
-            int percent = convertDecimalToPercent(pythonRiskProbability);
             return new DecisionResult(
                     DecisionResultEnum.DIRECT_ACCEPT.getChineseName(),
                     pythonResp.getDecisionConclusion(),
@@ -161,7 +160,6 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
 
         // 2. 直接拒保（0.7-1）：使用compareTo比较BigDecimal
         if (pythonRiskProbability.compareTo(RiskDecisionConstant.DIRECT_REJECT_THRESHOLD) >= 0) {
-            int percent = convertDecimalToPercent(pythonRiskProbability);
             return new DecisionResult(
                     DecisionResultEnum.DIRECT_REJECT.getChineseName(),
                     pythonResp.getDecisionConclusion(),
@@ -194,15 +192,6 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
         );
 
         return aiDecisionResult;
-    }
-
-    /**
-     * 新增：0-1小数转0-100百分比整数（统一格式化逻辑）
-     */
-    private int convertDecimalToPercent(BigDecimal decimal) {
-        return decimal.multiply(PERCENT_SCALE)
-                .setScale(0, RoundingMode.HALF_UP) // 四舍五入取整
-                .intValue();
     }
 
     /**
@@ -358,9 +347,9 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
                         "   - 健康风险值：%s\n" +
                         "   - 总风险值：%s\n" +
                         "2. 返回要求（必须严格遵守，否则无法解析，无额外冗余文字）：\n" +
-                        "   - 风险概率（agentRiskProb）：仅返回0-1之间的纯小数，保留两位小数（示例：0.45），无单位、无解释性文字；\n" +
+                        "   - 风险概率（agentRiskProb）：仅返回0-1之间的纯小数，保留6位小数（示例：0.450123），无单位、无解释性文字；\n" +
                         "   - 风险评估说明（riskAnalysis）：返回详细的风险复核理由，围绕投保人风险特征展开，字数控制在50-200字，逻辑清晰、客观中立；\n" +
-                        "   - 复查结论（reviewConclusion）：格式为「关键原因，次要原因，风险概率（保留3位小数），最终决策」，用中文逗号分隔，最终决策仅填「承保」或「拒保」，示例：风险因子总分85（极高），存在既往病史，0.850，拒保，无任何额外文字、标点或格式；\n" +
+                        "   - 复查结论（reviewConclusion）：格式为「关键原因，次要原因，风险概率（保留6位小数），最终决策」，用中文逗号分隔，最终决策仅填「承保」或「拒保」，示例：风险因子总分85（极高），存在既往病史，0.850，拒保，无任何额外文字、标点或格式；\n" +
                         "   - 最终决策（finalDecision）：仅返回「承保」或「拒保」其中一个纯文字值，无任何额外字符；",
                 request.getPolicyHolderId(),
                 formatBigDecimal(pythonResp.getPythonRiskProbability()),
@@ -386,6 +375,6 @@ public class RiskDecisionServiceImpl extends ServiceImpl<RiskDecisionMapper,Risk
     }
 
     private String formatBigDecimal(BigDecimal value) {
-        return value == null ? "0.00" : value.setScale(2, RoundingMode.HALF_UP).toString();
+        return value == null ? "0.000000" : value.setScale(6, RoundingMode.HALF_UP).toString();
     }
 }

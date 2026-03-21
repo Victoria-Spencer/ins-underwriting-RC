@@ -100,7 +100,7 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
      * 从常量类获取各维度权重
      * 加权求和（各因子 × 对应权重）
      * 归一化处理（确保总风险值≤1，保险风控核心规则）
-     * 保留2位小数（避免精度冗余）
+     * 保留6位小数（避免精度冗余）
      */
     private BigDecimal calculateTotalRiskValue(
             BigDecimal ageRiskValue,
@@ -122,6 +122,6 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
                 ? BigDecimal.ONE
                 : weightedSum;
 
-        return totalRiskValue.setScale(2, RoundingMode.HALF_UP);
+        return totalRiskValue.setScale(6, RoundingMode.HALF_UP);
     }
 }
