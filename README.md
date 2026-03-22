@@ -10,3 +10,5 @@ SpringBoot + SLF4J + Logback
 ### 关键技术说明
 • JDK 21：项目核心服务基于 JDK 21 的 LTS 版本开发，充分利用其虚拟线程（Virtual Threads）特性提升高并发核保请求的处理效率，同时兼容密封类、Record 类型等语法简化核心逻辑开发  
 • 智能体引擎：项目核心组件，整合 “规则引擎 + AI 模型 + 业务知识图谱”，具备自主解析资料、评估风险、生成决策的能力，且支持规则 / 模型的热更新  
+### Python子项目链接
+https://github.com/Victoria-Spencer/risk_assessment
