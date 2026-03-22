@@ -54,6 +54,14 @@ public class MybatisPlusMetaObjectHandler implements MetaObjectHandler {
                 LocalDateTime.now()
         );
 
+        // ========= 4. 承保时间（underwritingTime）=========
+        this.strictInsertFill(
+                metaObject,
+                "underwritingTime",
+                LocalDateTime.class,
+                LocalDateTime.now()
+        );
+
         // ========== 扩展：填充创建人（createUser）（如有需要，取消注释并适配） ==========
         // 示例：从上下文获取当前登录用户ID
         // Long currentUserId = SecurityUtils.getCurrentUserId();

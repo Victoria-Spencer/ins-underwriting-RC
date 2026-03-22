@@ -16,23 +16,23 @@ public class UnderwritingResponseVO {
     /**
      * 投保人基本信息
      */
-    private PolicyHolderVO policyHolder;
+    private PolicyHolderVO policyHolderVO;
     /**
      * 风险因子计算结果
      */
-    private RiskFactorVO riskFactor;
+    private RiskFactorVO riskFactorVO;
     /**
      * 逆选择防控结果
      */
-    private AntiselectionVO antiselection;
+    private AntiselectionVO antiselectionVO;
     /**
      * 风控决策结果
      */
-    private RiskDecisionVO riskDecision;
+    private RiskDecisionVO riskDecisionVO;
     /**
      * 保费定价结果
      */
-    private PricingCoreVO pricing;
+    private PricingCoreVO pricingVO;
     /**
      * 最终承保结果（承保/拒保）
      */

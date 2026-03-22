@@ -46,11 +46,6 @@ public class PricingRecord implements Serializable {
     private BigDecimal basePremium;
 
     /**
-     * 风险调整系数（如：1.5=上浮50%，0.9=下浮10%）
-     */
-    private BigDecimal riskAdjustRatio;
-
-    /**
      * 最终保费（base_premium * risk_adjust_ratio）
      */
     private BigDecimal finalPremium;

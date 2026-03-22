@@ -52,7 +52,7 @@ public class UnderwritingRecord implements Serializable {
     /**
      * 承保时间
      */
-    @TableField(value = "calculate_time", fill = FieldFill.INSERT_UPDATE)
+    @TableField(value = "underwriting_time", fill = FieldFill.INSERT)
     private LocalDateTime underwritingTime;
 
     /**

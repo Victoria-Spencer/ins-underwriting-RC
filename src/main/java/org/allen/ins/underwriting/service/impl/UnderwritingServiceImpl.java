@@ -30,9 +30,9 @@ import org.allen.ins.underwriting.rc.pricing.pojo.domain.PricingRecord;
 import org.allen.ins.underwriting.rc.pricing.pojo.dto.PricingCoreDTO;
 import org.allen.ins.underwriting.rc.pricing.pojo.vo.PricingCoreVO;
 import org.allen.ins.underwriting.rc.pricing.service.PricingService;
-import org.allen.ins.underwriting.service.PolicyHolderService;
 import org.allen.ins.underwriting.service.UnderwritingService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -59,7 +59,13 @@ public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, Und
     private final BigDecimal DEFAULT_COST_COEFFICIENT = new BigDecimal("0.123456");
     private final BigDecimal DEFAULT_PROFIT_COEFFICIENT = new BigDecimal("0.234567");
 
+    // 承保
+    public static final String UNDERWRITING_ACCEPT = "承保";
+    // 拒保
+    public static final String UNDERWRITING_DECLINE = "拒保";
+
     @Override
+    @Transactional
     public UnderwritingResponseVO calculateUnderwritingRisk(UnderwritingRequestDTO request) {
         PolicyHolderVO policyHolderVO = getPolicyHolderVOById(request.getPolicyHolderId());
 
@@ -70,7 +76,7 @@ public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, Und
         RiskDecisionVO riskDecisionVO = calculateRiskDecision(request, riskFactorVO);
 
         PricingCoreVO pricingCoreVO = new PricingCoreVO();
-        if (riskDecisionVO.getDecisionResult() == null) {
+        if (riskDecisionVO.getDecisionResult().equals(UNDERWRITING_ACCEPT) ) {
             pricingCoreVO = calculatePricing(request, riskDecisionVO);
         }
 
@@ -78,11 +84,11 @@ public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, Und
 
         // 封装返回
         return new UnderwritingResponseVO()
-                .setPolicyHolder(policyHolderVO)
-                .setRiskFactor(riskFactorVO)
-                .setAntiselection(antiselectionVO)
-                .setRiskDecision(riskDecisionVO)
-                .setPricing(pricingCoreVO)
+                .setPolicyHolderVO(policyHolderVO)
+                .setRiskFactorVO(riskFactorVO)
+                .setAntiselectionVO(antiselectionVO)
+                .setRiskDecisionVO(riskDecisionVO)
+                .setPricingVO(pricingCoreVO)
                 .setUnderwritingResult(riskDecisionVO.getDecisionResult());
     }
 
@@ -98,7 +104,7 @@ public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, Und
         }
 
         // 获取pricingId
-        PricingRecord pricingRecord = pricingMapper.selectById(
+        PricingRecord pricingRecord = pricingMapper.selectOne(
                 new QueryWrapper<PricingRecord>().eq("trace_id", traceId)
         );
         Long pricingId = null;

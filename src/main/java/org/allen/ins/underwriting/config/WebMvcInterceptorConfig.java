@@ -20,7 +20,7 @@ public class WebMvcInterceptorConfig implements WebMvcConfigurer {
                         "/underwriting/**",    // 核保相关接口
                         "/rc/decision/**",     // 风控决策相关接口
                         "/rc/factor/**",       // 凤险因子相关接口
-                        "/rc/pricing/**"
+                        "/rc/pricing/**"       // 保费定价相关接口
                 )
                 // 排除静态资源等无关接口
                 .excludePathPatterns(

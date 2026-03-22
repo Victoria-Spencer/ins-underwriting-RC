@@ -32,7 +32,7 @@ public class PolicyHolderController {
     /**
      * 根据ID查询投保人信息（运营后台/风控流程调用）
      */
-    @GetMapping("/get/{id}")
+    @GetMapping("/getHolderInfo/{id}")
     public Result<PolicyHolderVO> getPolicyHolderById(@PathVariable Long id) {
         PolicyHolderVO vo = policyHolderService.getPolicyHolderVOById(id);
         if (null == vo) {
