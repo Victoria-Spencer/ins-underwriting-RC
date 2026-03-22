@@ -34,8 +34,8 @@ python:
 # AI复查接口配置
 ai:
   general:
-    base-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions # 实际AI接口地址
-    api-key: 290b7c50-1ecb-41c5-8d55-28a679a7d49b  # 实际API密钥
+    base-url:  # 实际AI接口地址
+    api-key:   # 实际API密钥
     timeout: 30  # 超时时间（秒）
     # 豆包模型专属配置（业务层读取）
   doubao:
