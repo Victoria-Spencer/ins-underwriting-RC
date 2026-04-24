@@ -1,0 +1,13 @@
+name: Qodo Code Review
+on:
+  pull_request:
+    branches: [master]
+jobs:
+  qodo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Qodo Scan
+        uses: qodo-ai/qodo-action@v1
+        with:
+          qodo_api_key: ${{ secrets.QODO_API_KEY }}
