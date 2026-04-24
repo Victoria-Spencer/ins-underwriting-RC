@@ -68,11 +68,8 @@ public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, Und
     @Transactional
     public UnderwritingResponseVO calculateUnderwritingRisk(UnderwritingRequestDTO request) {
         PolicyHolderVO policyHolderVO = getPolicyHolderVOById(request.getPolicyHolderId());
-
         RiskFactorVO riskFactorVO = calculateRiskFactor(request);
-
         AntiselectionVO antiselectionVO = getAntiselectionVO();
-
         RiskDecisionVO riskDecisionVO = calculateRiskDecision(request, riskFactorVO);
 
         PricingCoreVO pricingCoreVO = new PricingCoreVO();
