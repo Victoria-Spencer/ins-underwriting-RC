@@ -63,7 +63,7 @@ public class RiskFactorServiceImpl extends ServiceImpl<RiskFactorMapper, RiskFac
         // TODO 调用第三方接口核验住院记录
 
         // TODO 调用第三方接口获取健康因子的核心数据，然后计算健康风险因子
-        BigDecimal healthRiskValue  = BigDecimal.valueOf(0.123456);
+        BigDecimal healthRiskValue  = BigDecimal.valueOf(0.834567);
 
         // 加权计算总风险因子
         BigDecimal totalRiskValue = calculateTotalRiskValue(
