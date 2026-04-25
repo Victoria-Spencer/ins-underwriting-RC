@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.allen.ins.underwriting.common.constant.SystemConstant;
 import org.allen.ins.underwriting.common.util.TraceIdContext;
 import org.allen.ins.underwriting.dao.PolicyHolderMapper;
@@ -37,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 @Service
+@Slf4j
 public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, UnderwritingRecord>
         implements UnderwritingService {
 
@@ -67,9 +69,8 @@ public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, Und
     @Override
     @Transactional
     public UnderwritingResponseVO calculateUnderwritingRisk(UnderwritingRequestDTO request) {
-        System.out.println("test-qolo");
-        System.out.println("test-qolo");
-        System.out.println("test-qolo");
+//        System.out.println("test-qolo");
+        log.debug("test-qolo");
         PolicyHolderVO policyHolderVO = getPolicyHolderVOById(request.getPolicyHolderId());
 
         RiskFactorVO riskFactorVO = calculateRiskFactor(request);
