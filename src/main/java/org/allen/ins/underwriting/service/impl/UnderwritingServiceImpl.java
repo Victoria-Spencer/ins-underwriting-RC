@@ -69,7 +69,6 @@ public class UnderwritingServiceImpl extends ServiceImpl<UnderwritingMapper, Und
     @Override
     @Transactional
     public UnderwritingResponseVO calculateUnderwritingRisk(UnderwritingRequestDTO request) {
-//        System.out.println("test-qolo");
         log.debug("test-qolo");
         PolicyHolderVO policyHolderVO = getPolicyHolderVOById(request.getPolicyHolderId());
 
